@@ -136,5 +136,194 @@
   
   Note that there is no way to rearrange addresses and replace the primary address. Make sure you set the primary address first.
   
+# Route management
+
+  In this section ${address} refers to subnet address in dotted decimal format, and ${mask} refers to subnet mask either in prefix length or dotted decimal format. That is, both 192.0.2.0/24 and 192.0.2.0/255.255.255.0 are equally acceptable.
+
+  **Note:** as per the section below, if you set up a static route, and it becomes useless because the interface goes down, it will be removed and never get back on its own. You may not have noticed this behaviour because in many cases additional software (e.g. NetworkManager or rp-pppoe) takes care of restoring routes associated with interfaces.
+
+  If you are going to use your Linux machine as a router, consider installing a routing protocol stack suite like Quagga or BIRD. They serve as routing control plane, keeping configured routes and restoring them after link failures properly in general case, and also providing dynamic routing protocol (e.g. OSPF and BGP) functionality.
+
+  **Connected routes**
+
+  Some routes appear in the system without explicit configuration (against your will).
+
+  Once you assign an address to an interface, a route to the subnet it belongs is automatically created via the interface you assigned it too. This is exactly the reason "ip address add" command wants subnet mask, otherwise the system would be unable to find out its subnet address and create connected routes properly.
+
+  When an interface goes down, connected routes associated with it are removed. This is used for inaccessible gateway detection so routes through gateways that went inaccessible are removed. Same mechanism prevents you from creating routes through inaccessible gateways.
+
+  **View all routes**
+  ```
+  ip route
+  ip route show
+  ```
+  Show commands accept -4 and -6 options to view only IPv4 or IPv6 routes. If no options given, IPv4 routes are displayed. To view IPv6 routes, use:
+  ```
+  ip -6 route
+  ```
   
+  **View routes to a network and all its subnets**
+  ```
+  ip route show to root ${address}/${mask}
+  ```
+  For example, if you use 192.168.0.0/24 subnet in a part of your network and it's broken into 192.168.0.0/25 and 192.168.0.128/25, you can see all those routes with:
+  ```
+  ip route show to root 192.168.0.0/24
+  ```
+  Note: the word "to" in this and other show commands is optional.
+  
+  **View routes to a network and all supernets**
+  ```
+  ip route show to match ${address}/${mask}
+  ```
+  If you want to view routes to 192.168.0.0/24 and all larger subnets, use:
+  ```
+  ip route show to match 192.168.0.0/24
+  ```
+  As routers prefer more specific routes to less specific, this is often useful for debugging in situations when traffic to a specific subnet is sent the wrong way because a route to it is missing but routes to larger subnets exist.
+  
+  **View routes to exact subnet**
+  ```
+  ip route show to exact ${address}/${mask}
+  ```
+  If you want to see the routes to 192.168.0.0/25, but not to, say 192.168.0.0/25 and 192.168.0.0/16, you can use:
+  ```
+  ip route show to exact 192.168.0.0/24
+  ```
+  
+  **View only the route actually used by the kernel**
+  ```
+  ip route get ${address}/${mask}
+  ```
+  Example:
+  ```
+  ip route get 192.168.0.0/24
+  ```
+  Note that in complex routing scenarios like multipath routing, the result may be "correct but not complete", as it always shows one route that will be used first. In most situations it's not a problem, but never forget to look at the corresponsing "show" command output too.
+  
+  **View route cache (pre 3.6 kernels only)**
+  ```
+  ip route show cached
+  ```
+  Until the version 3.6, Linux used route caching. In older kernels, this command displays the contents of the route cache. It can be used with modifiers described above. In newer kernels it does nothing.
+
+  **Add a route via gateway**
+  ```
+  ip route add ${address}/${mask} via ${next hop}
+  ```
+  Examples:
+  ```
+  ip route add 192.0.2.128/25 via 192.0.2.1
+  ip route add 2001:db8:1::/48 via 2001:db8:1::1
+  ```
+
+  **Add a route via interface**
+  ```
+  ip route add ${address}/${mask} dev ${interface name}
+  ```
+  Example:
+  ```
+  ip route add 192.0.2.0/25 dev ppp0
+  ```
+  Interface routes are commonly used with point-to-point interfaces like PPP tunnels where next hop address is not required.
+  
+  **Change or replace a route**
+  
+  You may use "change" command to change parameters of existing routes. "Replace" command can be used to add new route or modify existing one if it doesn't exist. Examples:
+  ```
+  ip route change 192.168.2.0/24 via 10.0.0.1
+  ip route replace 192.0.2.1/27 dev tun0
+  ```
+  
+  **Delete a route**
+  ```
+  ip route delete ${rest of the route statement}
+  ```
+  Examples:
+  ```
+  ip route delete 10.0.1.0/25 via 10.0.0.1
+  ip route delete default dev ppp0
+  ```
+
+  **Default route**
+
+  There is a shortcut to add default route.
+  ```
+  ip route add default via ${address}/${mask}
+  ip route add default dev ${interface name}
+  ```
+  These are equivalent to:
+  ```
+  ip route add 0.0.0.0/0 ${address}/${mask}
+  ip route add 0.0.0.0/0 dev ${interface name}
+  ```
+  With IPv6 routes it also works and is equivalent to ::/0
+  ```
+  ip -6 route add default via 2001:db8::1
+  ```
+  
+  **Blackhole routes**
+  ```
+  ip route add blackhole ${address}/${mask}
+  ```
+  Examples:
+  ```
+  ip route add blackhole 192.0.2.1/32
+  ```
+  Traffic to destinations that match a blackhole route is silently discarded.
+
+  Blackhole routes have dual purpose. First one is straightforward, to discard traffic sent to unwanted destinations, e.g. known malicious hosts.
+
+  The second one is less obvious and uses the "longest match rule" as per RFC1812. In some cases you may want the router to think it has a route to a larger subnet, while you are not using it as a whole, e.g. when advertising the whole subnet via dynamic routing protocols. Large subnets are commonly broken into smaller parts, so if your subnet is 192.0.2.0/24, and you have assigned 192.0.2.1/25 and 192.0.2.129/25 to your interfaces, your system creates connected routes to the /25's, but not the whole /24, and routing daemons may not want to advertise /24 because you have no route to that exact subnet. The solution is to setup a blackhole route to 192.0.2.0/24. Because routes to smaller subnets are preferred over larger subnets, it will not affect actual routing, but will convince routing daemons there's a route to the supernet.
+
+  **Other special routes**
+  ```
+  ip route add unreachable ${address}/${mask}
+  ip route add prohibit ${address}/${mask}
+  ip route add throw ${address}/${mask}
+  ```
+  These routes make the system discard packets and reply with an ICMP error message to the sender.
+  
+unreachable
+
+  Sends ICMP "host unreachable".
+  
+prohibit
+
+  Sends ICMP "administratively prohibited".
+  
+throw
+
+  Sends "net unreachable".
+  
+  Unlike blackhole routes, these can't be recommended for stopping unwanted traffic (e.g. DDoS) because they generate a reply packet for every discarded packet and thus create even greater traffic flow. They can be good for implementing internal access policies, but consider firewall for this purpose first.
+
+  "Throw" routes may be used for implementing policy-based routing, in non-default tables they stop current table lookup, but don't send ICMP error messages.
+
+  **Routes with different metric**
+  ```
+  ip route add ${address}/${mask} via ${gateway} metric ${number}
+  ```
+  Examples:
+  ```
+  ip route add 192.168.2.0/24 via 10.0.1.1 metric 5
+  ip route add 192.168.2.0 dev ppp0 metric 10
+  ```
+  If there are several routes to the same network with different metric value, the one with the lowest metric will be preferred.
+
+  Important part of this concept is that when an interface goes down, routes that would be rendered useless by this event disappear from the routing table (see "Connected Routes" section), and the system will fall back to higher metric routes.
+
+  This feature is commonly used to implement backup connections to important destinations.
+
+  **Multipath routing**
+  ```
+  ip route add ${addresss}/${mask} nexthop via ${gateway 1} weight ${number} nexthop via ${gateway 2} weight ${number}
+  ```
+  Multipath routes make the system balance packets across several links according to the weight (higher weight is preferred, so gateway/interface with weight of 2 will get roughly two times more traffic than another one with weight of 1). You can have as many gateways as you want and mix gateway and interface routes, like:
+  ```
+  ip route add default nexthop via 192.168.1.1 weight 1 nexthop dev ppp0 weight 10
+  ```
+  **Warning:** the downside of this type of balancing is that packets are not guaranteed to be sent back through the same link they came in. This is called "asymmetric routing". For routers that simply forward packets and don't do any local traffic processing such as NAT, this is usually normal, and in some cases even unavoidable.
+
+  If your system does anything but forwarding packets between interfaces, this may cause problems with incoming connections and some measures should be taken to prevent it.
   
