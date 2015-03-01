@@ -284,15 +284,15 @@
   ```
   These routes make the system discard packets and reply with an ICMP error message to the sender.
   
-unreachable
+*unreachable*
 
   Sends ICMP "host unreachable".
   
-prohibit
+*prohibit*
 
   Sends ICMP "administratively prohibited".
   
-throw
+*throw*
 
   Sends "net unreachable".
   
