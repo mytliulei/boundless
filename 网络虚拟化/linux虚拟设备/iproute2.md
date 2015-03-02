@@ -54,7 +54,29 @@
   * [Other special routes](#j214)
   * [Routes with different metric](#j215)
   * [Multipath routing](#j216)
-  
+3. [Link management](#j3)
+  * [Show information about all links](#j31)
+  * [Show information about specific link](#j32)
+  * [Bring a link up or down](#j33)
+  * [Set human-readable link description](#j34)
+  * [Rename an interface](#j35)
+  * [Change link layer address (usually MAC address)](#j36)
+  * [Change link MTU](#j37)
+  * [Delete a link](#j38)
+  * [Enable or disable multicast on an interface](#j39)
+  * [Enable or disable ARP on an interface](#j310)
+  * [Create a VLAN interface](#j311)
+  * [Create a QinQ interface (VLAN stacking)](#j312)
+  * [Create pseudo-ethernet (aka macvlan) interface](#j313)
+  * [Create a dummy interface](#j314)
+  * [Create a bridge interface](#j315)
+  * [Add an interface to bridge](#j316)
+  * [Remove interface from bridge](#j317)
+  * [Create a bonding interface](#j318)
+  * [Create an intermediate functional block interface](#j319)
+  * [Create a pair of virtual ethernet devices](#j320)
+
+---  
 <h1 id="j1"> Address management</h1>
 
   In this section ${address} value should be a host address in dotted decimal format, and ${mask} can be either a dotted decimal subnet mask or a prefix length. That is, both 192.0.2.10/24 and 192.0.2.10/255.255.255.0 are equally acceptable.
@@ -136,6 +158,7 @@
   
   Note that there is no way to rearrange addresses and replace the primary address. Make sure you set the primary address first.
   
+---  
 <h1 id="j2"> Route management</h1>
 
   In this section ${address} refers to subnet address in dotted decimal format, and ${mask} refers to subnet mask either in prefix length or dotted decimal format. That is, both 192.0.2.0/24 and 192.0.2.0/255.255.255.0 are equally acceptable.
@@ -326,4 +349,243 @@
   **Warning:** the downside of this type of balancing is that packets are not guaranteed to be sent back through the same link they came in. This is called "asymmetric routing". For routers that simply forward packets and don't do any local traffic processing such as NAT, this is usually normal, and in some cases even unavoidable.
 
   If your system does anything but forwarding packets between interfaces, this may cause problems with incoming connections and some measures should be taken to prevent it.
+  
+---
+<h1 id="j3"> Link management</h1>
+
+  Link is another name for network interface. Commands from "ip link" family perform operations that are common for all interface types, like viewing link information or setting MTU.
+
+  They also can create many types of interfaces, except for tunnel (IPIP, GRE etc.) and L2TPv3 pseudowires that have their own commands.
+
+  Note that interface name you set with "name ${name}" parameter of "ip link add" and "ip link set" commands may be arbitrary, and even contain unicode characters. It's better however to stick with ASCII because other programs may not handle unicode correctly. Also it's better to use a consistent convention for link names, and use link aliases to provide human descriptions.
+
+  <b id="j31">Show information about all links</b>
+  ```shell
+  ip link show
+  ip link list
+  ```
+  These commands are equivalent and can be used with the same arguments.
+  
+  <b id="j32">Show information about specific link</b>
+  ```shell
+  ip link show dev ${interface name}
+  ```
+  Examples:
+  ```shell
+  ip link show dev eth0
+  ip link show dev tun10
+  ```  
+  The word "dev" may be omitted.
+  
+  <b id="j33">Bring a link up or down</b>
+  ```shell
+  ip link set dev ${interface name} up
+  ip link set dev ${interface name} down
+  ```
+  Examples:
+  ```
+  ip link set dev eth0 down
+  ip link set dev br0 up
+  ```
+  Note: virtual links described below, like VLANs and bridges are in down state immediately after creation. You need to bring them up to start using them.
+
+  <b id="j34">Set human-readable link description</b>
+  ```
+  ip link set dev ${interface name} alias "${description}"
+  ```
+  Examples:
+  ```
+  ip link set dev eth0 alias "LAN interface"
+  ```
+  Link aliases show up in "ip link show" output, like:
+  2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT qlen 1000
+      link/ether 22:ce:e0:99:63:6f brd ff:ff:ff:ff:ff:ff
+      alias LAN interface
+          
+  <b id="j35">Rename an interface</b>
+  ```
+  ip link set dev ${old interface name} name ${new interface name}
+  ```
+  Examples:
+  ```
+  ip link set dev eth0 name lan
+  ```
+  Note that you can't rename an active interface. You need to bring it down before doing it.
+
+  <b id="j36">Change link layer address (usually MAC address)</b>
+  ```
+  ip link set dev ${interface name} address ${address}
+  ```
+  Link layer address is a pretty broad concept. The most known example is MAC address for ethernet devices. To change MAC address you would need something like:
+  ```
+  ip link set dev eth0 address 22:ce:e0:99:63:6f
+  ```
+  
+  <b id="j37">Change link MTU</b>
+  ```
+  ip link set dev ${interface name} mtu ${MTU value}
+  ```
+  Examples:
+  ```
+  ip link set dev tun0 mtu 1480
+  ```
+  MTU stands for "Maximum Transmission Unit", the maximum size of a frame an interface can transmit at once.
+
+  Apart from reducing fragmentation in tunnels like in example above, this is also used to increase performance of gigabit ethernet links that support so called "jumbo frames" (frames up to 9000 bytes large). If all your equipment supports gigabit ethernet, you may want to do something like
+  ```
+  ip link set dev eth0 mtu 9000
+  ```
+  Note that you may need to configure it on your L2 swithces too, some of them have it disables by default.
+
+  <b id="j38">Delete a link</b>
+  ```
+  ip link delete dev ${interface name}
+  ```
+  Obviously, only virtual links like VLANs or bridges can be deleted.
+
+  <b id="j39">Enable or disable multicast on an interface</b>
+  ```
+  ip link set ${interface name} multicast on
+  ip link set ${interface name} multicast off
+  ```
+  Unless you really understand what you are doing, better not to touch this.
+
+  <b id="j310">Enable or disable ARP on an interface</b>
+  ```
+  ip link set ${interface name} arp on
+  ip link set ${interface name} arp off
+  ```
+  One may want to disable ARP to enforce a security policy and allow only specific MACs to communicate with the interface. In this case neighbor table entries for whitelisted MACs should be created manually (see neighbor table management section), or nothing will be able to communicate with that interface.
+
+  In most cases it's better to configure MAC policy on an access layer switch though. Do not change this flag unless you are sure what you are going to do and why.
+
+  <b id="j311">Create a VLAN interface</b>
+  ```
+  ip link add name ${VLAN interface name} link ${parent interface name} type vlan id ${tag}
+  ```
+  Examples:
+  ```
+  ip link add name eth0.110 link eth0 type vlan id 110
+  ```
+  The only type of VLAN supported in Linux is IEEE 802.1q VLAN, legacy implementations like ISL are not supported.
+
+  Once you create a VLAN interface, all frames tagged with ${tag} you specified in id option received by ${parent interface} will be processed by that VLAN interface.
+
+  eth0.100 name format is traditional, but not required, you can name the interface as you want, just like with other interface types.
+
+  VLANs can be created over bridge, bonding and other interfaces capable of processing ethernet frames too.
+
+  <b id="j312">Create a QinQ interface (VLAN stacking)</b>
+  ```
+  ip link add name ${service interface} link ${physical interface} type vlan proto 802.1ad id ${service tag}
+  ip link add name ${client interface} link ${service interface} type vlan proto 802.1q id ${client tag}
+  ```
+  Example:
+  ```
+  ip link add name eth0.100 link eth0 type vlan proto 802.1ad id 100 # Create service tag interface
+  ip link add name eth0.100.200 link eth0.100 type vlan proto 802.1q id 200 # Create client tag interface
+  ```
+  VLAN stacking (aka 802.1ad QinQ) is a way to transmit VLAN tagged traffic over another VLAN. The common use case for it is like this: suppose you are a service provider and you have a customer who wants to use your network infrastructure to connect parts of their network to each other. They use multiple VLANs in their network, so an ordinary rented VLAN is not an option. With QinQ you can add a second tag to the customer traffic when it enters your network and remove that tag when it exits, so there are no conflicts and you don't need to waste VLAN numbers.
+
+  The service tag is the VLAN tag the provider uses to carry client traffic through their network. The client tag is the tag set by the customer.
+
+  Note that link MTU for the client VLAN interface is not adjusted automatically, you need to take care of it yourself and either decrease the client interface MTU by at least 4 bytes, or increase the parent MTU accordingly.
+
+  Standards-compliant QinQ is available since Linux 3.10.
+
+  <b id="j313">Create pseudo-ethernet (aka macvlan) interface</b>
+  ```
+  ip link add name ${macvlan interface name} link ${parent interface} type macvlan
+  ```
+  Examples:
+  ```
+  ip link add name peth0 link eth0 type macvlan
+  ```
+  You can think of macvlan interfaces as additional virtual MAC addresses on the parent interface. They look like normal ethernet interfaces from user point of view, and handle all traffic for MAC address they are assigned with received by their parent interface.
+
+  This is commonly used for testing, or for using several instances of a service identified by MAC when only one physical interface is available.
+
+  They also can be used just for IP address separation instead of assigning multiple addresses to the same physical interface, especially if some service can't operate on a secondary address properly.
+
+  <b id="j314">Create a dummy interface</b>
+  ```
+  ip link add name ${dummy interface name} type dummy
+  ```
+  Examples:
+  ```
+  ip link add name dummy0 type dummy
+  ```
+  Dummy interfaces work pretty much like loopback interfaces, just there can be as many of them as you want.
+
+  The first purpose of them is for communication of programs inside the host.
+
+  The second purpose exploits the fact they are always up (unless administratively taken down). This is often used to assign service addresses to them on routers with more than one physical interface. As long as the traffic to the address assigned to a loopback or dummy interface is routed to the machine that owns it, you can access it through any of its interfaces.
+
+  <b id="j315">Create a bridge interface</b>
+  ```
+  ip link add name ${bridge name} type bridge
+  ```
+  Examples:
+  ```
+  ip link add name br0 type bridge
+  ```
+  Bridge interfaces are virtual ethernet switches. They can be used to relay traffic transparently between ethernet interfaces, and, increasingly common, as ethernet switches for virtual machines running inside hypervisors.
+
+  You can assign an IP address to a bridge and it will be visible from all bridge ports.
+
+  If this command failes, check if "bridge" module is loaded.
+
+  <b id="j316">Add an interface to bridge</b>
+  ```
+  ip link set dev ${interface name} master ${bridge name}
+  ```
+  Examples:
+  ```
+  ip link set dev eth0 master br0
+  ```
+  Interface you added to a bridge becomes a virtual switch port. It operates only on datalink layer and ceases all network layer operation.
+
+  <b id="j317">Remove interface from bridge</b>
+  ```
+  ip link set dev ${interface name} nomaster
+  ```
+  Examples:
+  ```
+  ip link set dev eth0 nomaster
+  ```
+  
+  <b id="j318">Create a bonding interface</b>
+  ```
+  ip link add name ${name} type bond
+  ```
+  Examples:
+  ```
+  ip link add name bond1 type bond
+  ```
+  Note: This is not enough to configure bonding (link aggregation) in any meaningful way. You need to set up bonding parameters according to your situation. This is far beyond the cheat sheet scope, so consult the documentation.
+
+  Interfaces are added to the bond group the same way to bridge group, just note that you can't add it until you take it down.
+
+  <b id="j319">Create an intermediate functional block interface</b>
+  ```
+  ip link add ${interface name} type ifb
+  ```
+  Example:
+  ```
+  ip link add ifb10 type ifb
+  ```
+  Intermediate functional block devices are used for traffic redirection and mirroring in conjunction with tc. This is also far beyond the scope of this document, consult tc documentation.
+
+  <b id="j320">Create a pair of virtual ethernet devices</b>
+  
+  Virtual ethernet (veth) devices always come in pairs and work as a bidirectional pipe, whatever comes into one of them, comes out of another. They are used in conjunction with system partitioning features such as network namespaces and containers (OpenVZ and LXC) for connecting one partition to another.
+  ```
+  ip link add name ${first device name} type veth peer name ${second device name}
+  ```
+  Examples:
+  ```
+  ip link add name veth-host type veth peer name veth-guest
+  ```
+  Note: virtual ethernet devices are created in UP state, no need to bring them up manually after creation.
+  
   
