@@ -23,7 +23,7 @@
 
   There are configuration files in /etc/iproute2, mainly for assinging symbolic names to network stack entities such as routing tables. Those files are re-read at every "ip" call and you don't need to do anything to apply the changes.
   
-# Typographic conventions
+<h1 id="j0"> Typographic conventions</h1>
 
   Metasyntactic variables are written in shell-style syntax, ${something}. Optional command parts are in square brackets.
   
