@@ -28,46 +28,46 @@
   Metasyntactic variables are written in shell-style syntax, ${something}. Optional command parts are in square brackets.
   
 1. [Address management](#j1)
-  * [Show all addresses]
-  * [Show addresses for a single interface]
-  * [Show addresses only for running interfaces]
-  * [Show only static or dynamic IPv6 addresses]
-  * [Add an address to an interface]
-  * [Add an address with human-readable description]
-  * [Delete an address]
-  * [Remove all addresses from an interface]
-  * [Notes]
-2. [Route management]
-  * [Connected routes]
-  * [View all routes]
-  * [View routes to a network and all its subnets]
-  * [View routes to a network and all supernets]
-  * [View routes to exact subnet]
-  * [View only the route actually used by the kernel]
-  * [View route cache (pre 3.6 kernels only)]
-  * [Add a route via gateway]
-  * [Add a route via interface]
-  * [Change or replace a route]
-  * [Delete a route]
-  * [Default route]
-  * [Blackhole routes]
-  * [Other special routes]
-  * [Routes with different metric]
-  * [Multipath routing]
+  * [Show all addresses](#j11)
+  * [Show addresses for a single interface](#j12)
+  * [Show addresses only for running interfaces](#j13)
+  * [Show only static or dynamic IPv6 addresses](#j14)
+  * [Add an address to an interface](#j15)
+  * [Add an address with human-readable description](#j16)
+  * [Delete an address](#j17)
+  * [Remove all addresses from an interface](#j18)
+  * [Notes](#j19)
+2. [Route management](#j2)
+  * [Connected routes](#j21)
+  * [View all routes](#j22)
+  * [View routes to a network and all its subnets](#j23)
+  * [View routes to a network and all supernets](#j24)
+  * [View routes to exact subnet](#j25)
+  * [View only the route actually used by the kernel](#j26)
+  * [View route cache (pre 3.6 kernels only)](#j27)
+  * [Add a route via gateway](#j28)
+  * [Add a route via interface](#j29)
+  * [Change or replace a route](#j210)
+  * [Delete a route](#j211)
+  * [Default route](#j212)
+  * [Blackhole routes](#j213)
+  * [Other special routes](#j214)
+  * [Routes with different metric](#j215)
+  * [Multipath routing](#j216)
   
-<h1 id="j1">Address management</h1>
+<h1 id="j1"> Address management</h1>
 
   In this section ${address} value should be a host address in dotted decimal format, and ${mask} can be either a dotted decimal subnet mask or a prefix length. That is, both 192.0.2.10/24 and 192.0.2.10/255.255.255.0 are equally acceptable.
 
   If you are not sure if something is a correct host address, use "ipcalc" or similar program to check.
   
-  **Show all addresses**
+  <b id="j11">Show all addresses</b>
   ```shell
   ip address show
   ```
   All "show" commands can be used with "-4" or "-6" options to show only IPv4 or IPv6 addresses.
   
-  **Show addresses for a single interface**
+  <b id="j12">Show addresses for a single interface</b>
   ```shell
   ip address show ${interface name}
   ```
@@ -76,12 +76,12 @@
   ip address show eth0
   ```
   
-  **Show addresses only for running interfaces**
+  <b id="j13">Show addresses only for running interfaces</b>
   ```shell
   ip address show up
   ```
   
-  **Show only static or dynamic IPv6 addresses**
+  <b id="j14">Show only static or dynamic IPv6 addresses</b>
   
   Show only statically configured addresses:
   ```shell
@@ -92,7 +92,7 @@
   ip address show [dev ${interface}] dynamic
   ```
   
-  **Add an address to an interface**
+  <b id="j15">Add an address to an interface</b>
   ```shell
   ip address add ${address}/${mask} dev ${interface name}
   ```
@@ -103,7 +103,7 @@
   ```
   You can add as many addresses as you want. The first address will be primary and will be used as source address by default.
 
-  **Add an address with human-readable description**
+  <b id="j16">Add an address with human-readable description</b>
   ```shell  
   ip address add ${address}/${mask} dev ${interface name} label ${interface name}:${description} 
   ```
@@ -113,7 +113,7 @@
   ```
   Interface name with a colon before label is required, some backwards compaibility issue.
   
-  **Delete an address**
+  <b id="j17">Delete an address</b>
   ```shell
   ip address delete ${address}/${prefix} dev ${interface name}
   ```
@@ -123,7 +123,7 @@
   ```
   Interface name argument is required. Linux does allow to use the same address on multiple interfaces and it has valid use cases.
   
-  **Remove all addresses from an interface**
+  <b id="j18">Remove all addresses from an interface</b>
   ```
   ip address flush dev ${interface name}
   ```
@@ -132,11 +132,11 @@
   ip address flush dev eth1
   ```
   
-  **Notes**
+  <b id="j19">Notes</b>
   
   Note that there is no way to rearrange addresses and replace the primary address. Make sure you set the primary address first.
   
-# Route management
+<h1 id="j2"> Route management</h1>
 
   In this section ${address} refers to subnet address in dotted decimal format, and ${mask} refers to subnet mask either in prefix length or dotted decimal format. That is, both 192.0.2.0/24 and 192.0.2.0/255.255.255.0 are equally acceptable.
 
@@ -144,7 +144,7 @@
 
   If you are going to use your Linux machine as a router, consider installing a routing protocol stack suite like Quagga or BIRD. They serve as routing control plane, keeping configured routes and restoring them after link failures properly in general case, and also providing dynamic routing protocol (e.g. OSPF and BGP) functionality.
 
-  **Connected routes**
+  <b id="j21">Connected routes</b>
 
   Some routes appear in the system without explicit configuration (against your will).
 
@@ -152,7 +152,7 @@
 
   When an interface goes down, connected routes associated with it are removed. This is used for inaccessible gateway detection so routes through gateways that went inaccessible are removed. Same mechanism prevents you from creating routes through inaccessible gateways.
 
-  **View all routes**
+  <b id="j22">View all routes</b>
   ```
   ip route
   ip route show
@@ -162,7 +162,7 @@
   ip -6 route
   ```
   
-  **View routes to a network and all its subnets**
+  <b id="j23">View routes to a network and all its subnets</b>
   ```
   ip route show to root ${address}/${mask}
   ```
@@ -172,7 +172,7 @@
   ```
   Note: the word "to" in this and other show commands is optional.
   
-  **View routes to a network and all supernets**
+  <b id="j24">View routes to a network and all supernets</b>
   ```
   ip route show to match ${address}/${mask}
   ```
@@ -182,7 +182,7 @@
   ```
   As routers prefer more specific routes to less specific, this is often useful for debugging in situations when traffic to a specific subnet is sent the wrong way because a route to it is missing but routes to larger subnets exist.
   
-  **View routes to exact subnet**
+  <b id="j25">View routes to exact subnet</b>
   ```
   ip route show to exact ${address}/${mask}
   ```
@@ -191,7 +191,7 @@
   ip route show to exact 192.168.0.0/24
   ```
   
-  **View only the route actually used by the kernel**
+  <b id="j26">View only the route actually used by the kernel</b>
   ```
   ip route get ${address}/${mask}
   ```
@@ -201,13 +201,13 @@
   ```
   Note that in complex routing scenarios like multipath routing, the result may be "correct but not complete", as it always shows one route that will be used first. In most situations it's not a problem, but never forget to look at the corresponsing "show" command output too.
   
-  **View route cache (pre 3.6 kernels only)**
+  <b id="j27">View route cache (pre 3.6 kernels only)</b>
   ```
   ip route show cached
   ```
   Until the version 3.6, Linux used route caching. In older kernels, this command displays the contents of the route cache. It can be used with modifiers described above. In newer kernels it does nothing.
 
-  **Add a route via gateway**
+  <b id="j28">Add a route via gateway</b>
   ```
   ip route add ${address}/${mask} via ${next hop}
   ```
@@ -217,7 +217,7 @@
   ip route add 2001:db8:1::/48 via 2001:db8:1::1
   ```
 
-  **Add a route via interface**
+  <b id="j29">Add a route via interface</b>
   ```
   ip route add ${address}/${mask} dev ${interface name}
   ```
@@ -227,7 +227,7 @@
   ```
   Interface routes are commonly used with point-to-point interfaces like PPP tunnels where next hop address is not required.
   
-  **Change or replace a route**
+  <b id="j210">Change or replace a route</b>
   
   You may use "change" command to change parameters of existing routes. "Replace" command can be used to add new route or modify existing one if it doesn't exist. Examples:
   ```
@@ -235,7 +235,7 @@
   ip route replace 192.0.2.1/27 dev tun0
   ```
   
-  **Delete a route**
+  <b id="j211">Delete a route</b>
   ```
   ip route delete ${rest of the route statement}
   ```
@@ -245,7 +245,7 @@
   ip route delete default dev ppp0
   ```
 
-  **Default route**
+  <b id="j212">Default route</b>
 
   There is a shortcut to add default route.
   ```
@@ -262,7 +262,7 @@
   ip -6 route add default via 2001:db8::1
   ```
   
-  **Blackhole routes**
+  <b id="j213">Blackhole routes</b>
   ```
   ip route add blackhole ${address}/${mask}
   ```
@@ -276,7 +276,7 @@
 
   The second one is less obvious and uses the "longest match rule" as per RFC1812. In some cases you may want the router to think it has a route to a larger subnet, while you are not using it as a whole, e.g. when advertising the whole subnet via dynamic routing protocols. Large subnets are commonly broken into smaller parts, so if your subnet is 192.0.2.0/24, and you have assigned 192.0.2.1/25 and 192.0.2.129/25 to your interfaces, your system creates connected routes to the /25's, but not the whole /24, and routing daemons may not want to advertise /24 because you have no route to that exact subnet. The solution is to setup a blackhole route to 192.0.2.0/24. Because routes to smaller subnets are preferred over larger subnets, it will not affect actual routing, but will convince routing daemons there's a route to the supernet.
 
-  **Other special routes**
+  <b id="j214">Other special routes</b>
   ```
   ip route add unreachable ${address}/${mask}
   ip route add prohibit ${address}/${mask}
@@ -300,7 +300,7 @@
 
   "Throw" routes may be used for implementing policy-based routing, in non-default tables they stop current table lookup, but don't send ICMP error messages.
 
-  **Routes with different metric**
+  <b id="j215">Routes with different metric</b>
   ```
   ip route add ${address}/${mask} via ${gateway} metric ${number}
   ```
@@ -315,7 +315,7 @@
 
   This feature is commonly used to implement backup connections to important destinations.
 
-  **Multipath routing**
+  <b id="j26">Multipath routing</b>
   ```
   ip route add ${addresss}/${mask} nexthop via ${gateway 1} weight ${number} nexthop via ${gateway 2} weight ${number}
   ```
