@@ -20,54 +20,54 @@ this documentation is from http://www.opencloudblog.com/?p=42
   The tool to handle network namespaces is the command ip. Some users may know this tool as the replacement for the deprecated tools ifconfig, route, netstat…. You must be root for all operations which change the configuration of the network stack.
 
   Mapping of the commands between the ip and the depricated tools:
-  ```shell
-  ip addr
-  ip link set dev <interface> up/down
-  ip addr add <ip>/<masklen> dev <interface>
-  ip route
-  ip route add <net>/<netmasklen> via <gateway>
-  ```
+```shell
+ip addr
+ip link set dev <interface> up/down
+ip addr add <ip>/<masklen> dev <interface>
+ip route
+ip route add <net>/<netmasklen> via <gateway>
+```
   
 ### Check your Linux for namespace support
   
   Before trying to play with network namespaces check it your Linux system supports network namespaces. Ubuntu 12.04 and higher versions have the feature on board.
 
 ### Creating a network namespace
-  ```shell
-  # add a new namespace
-  ip netns add <network namespace name>
-  #Example:
-  ip netns add nstest
-  ```
+```shell
+#add a new namespace
+ip netns add <network namespace name>
+#Example:
+ip netns add nstest
+```
   
 ### Listing all existing network namespaces in the system
-  ```shell
-  # list all namespaces
-  ip netns list
-  nstest
-  ```
+```shell
+#list all namespaces
+ip netns list
+nstest
+```
   
 ### Deleting a network namespace
   
   A network namespace can be deleted using the command
-  ```shell
-  ip netns delete <network namespace name>
-  ```
+```shell
+ip netns delete <network namespace name>
+```
   
 ### Executing a command in a network namespace
   
   The command ip offers the “black magic” to execute commands in the network namespace. The following is used:
-  ```shell
-  #execute a command in a namespace
-  ip netns exec <network namespace name> <command>
-  #Example using the namespace from above:
-  #shows all ip interfaces and addresses in the namespace
-  ip netns exec nstest ip addr
-  ```
+```shell
+#execute a command in a namespace
+ip netns exec <network namespace name> <command>
+#Example using the namespace from above:
+#shows all ip interfaces and addresses in the namespace
+ip netns exec nstest ip addr
+```
   A “dirty” trick is to not start each command with the prefix ip netns exec…. Start a shell in the network namespace using
-  ```shell
-  ip netns exec <network namespace name> bash
-  ```
+```shell
+ip netns exec <network namespace name> bash
+```
   But do not forget, that you are now “trapped” in the network namespace. Just type exit to leave.
   
   
