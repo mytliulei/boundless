@@ -1,5 +1,4 @@
-this documentation is from http://www.opencloudblog.com/?p=42
-# Linux Network Namespaces
+# [Linux Network Namespaces](http://www.opencloudblog.com/?p=42)
 
 ## Introduction
 
@@ -147,7 +146,7 @@ PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.
   Virtual inferfaces and network namespaces are very useful, when a virtual switch, e.g. Openvswitch, is installed.  
 
 
-# Interconnecting Namespaces
+# [Interconnecting Namespaces](http://www.opencloudblog.com/?p=66)
 
   Switching in software on Linux is one of the important parts when using virtualization technologies like KVM or LXC. Typical hosts do not provide one or more physical adapters for each NIC of a virtual machine in KVM or per container when using LXC. Something else must take the part to interconnect the virtual network interfaces.
 
