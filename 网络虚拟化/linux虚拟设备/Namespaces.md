@@ -158,4 +158,61 @@ PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.
 ## veth pair
   The simple solution to connect two network namespaces is the usage of one veth pair. 
   
-  ![img of linuxswitch-veth](./img/linuxswitch-veth.pgn)
+  ![img of linuxswitch-veth](./img/linuxswitch-veth.png)
+  
+  The commands to create this setup are:
+```shell
+#add the namespaces
+ip netns add ns1
+ip netns add ns2
+#create the veth pair
+ip link add tap1 type veth peer name tap2
+#move the interfaces to the namespaces
+ip link set tap1 netns ns1
+ip link set tap2 netns ns2
+#bring up the links
+ip netns exec ns1 ip link set dev tap1 up
+ip netns exec ns2 ip link set dev tap2 up
+#now assign the ip addresses
+```
+
+## linux bridge and two veth pairs
+  When more than two network namespaces (or KVM or LXC instances) must be connected a switch should be used. Linux offers as one solution the well known linux bridge.
+  
+  ![img of linuxswitch-linuxbridge-veth](./img/linuxswitch-linuxbridge-veth1.png)
+  
+  We need for this setup one switch, and two connectors. In this setup we use a linuxbridge and two veth pairs.
+
+  The commands to create this setup are:
+```shell
+#add the namespaces
+ip netns add ns1
+ip netns add ns2
+#create the switch
+BRIDGE=br-test
+brctl addbr $BRIDGE
+brctl stp   $BRIDGE off
+ip link set dev $BRIDGE up
+#
+####PORT 1
+#create a port pair
+ip link add tap1 type veth peer name br-tap1
+#attach one side to linuxbridge
+brctl addif br-test br-tap1 
+#attach the other side to namespace
+ip link set tap1 netns ns1
+#set the ports to up
+ip netns exec ns1 ip link set dev tap1 up
+ip link set dev br-tap1 up
+#
+####PORT 2
+#create a port pair
+ip link add tap2 type veth peer name br-tap2
+#attach one side to linuxbridge
+brctl addif br-test br-tap2
+#attach the other side to namespace
+ip link set tap2 netns ns2
+#set the ports to up
+ip netns exec ns2 ip link set dev tap2 up
+ip link set dev br-tap2 up
+```
