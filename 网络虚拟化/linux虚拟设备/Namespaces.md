@@ -145,3 +145,17 @@ PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.
   Network namespaces are used by many container and virtualization techniques. LXC is one of the virtualization container techniques. Openstack neutron is also using the Linux network namespaces.
 
   Virtual inferfaces and network namespaces are very useful, when a virtual switch, e.g. Openvswitch, is installed.  
+
+
+# Interconnecting Namespaces
+
+  Switching in software on Linux is one of the important parts when using virtualization technologies like KVM or LXC. Typical hosts do not provide one or more physical adapters for each NIC of a virtual machine in KVM or per container when using LXC. Something else must take the part to interconnect the virtual network interfaces.
+
+  The software switching classical tool is the linuxbridge, which is available in the Linux kernel for a long time. The frontend to manage the linuxbridge is brctl. The newer tool is the Openvswitch (at http://openvswitch.org/). The main frontend is ovs-vsctl.
+
+  In this post I will show multiple solutions to interconnect Linux namespaces using a software based switch. A performance analysis of these solutions will be discussed in another article later. Starting with network namespaces helps to understand the more complex situations when using KVM or LXC.
+  
+## veth pair
+  The simple solution to connect two network namespaces is the usage of one veth pair. 
+  
+  
