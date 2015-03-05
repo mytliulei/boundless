@@ -268,6 +268,8 @@ def sendp(x, inter=0, loop=0, iface=None, iface_hint=None, count=None, verbose=N
     
   其他参数请详见源码
   
+  **发送报文操作要用root权限**
+  
   **发送多个不同的报文时，可将这些报文汇集成list，然后发送**
 ```python
 >>> pl=Ether(dst="00:00:00:00:01:01",src="00:00:00:00:00:01")/IP(src="192.168.30.21",dst="192.168.30.254")
