@@ -75,6 +75,12 @@
   * [Create a bonding interface](#j318)
   * [Create an intermediate functional block interface](#j319)
   * [Create a pair of virtual ethernet devices](#j320)
+4. [Link group management](#j4)
+  * [Add an interface to a group](#j41)
+  * [Remove an interface from a group](#j42)
+  * [Assign a symbolic name to a group](#j43)
+  * [Perform an operation on a group](#j44)
+  * [View information about links from specific group](#j45)
 
 ---  
 <h1 id="j1"> Address management</h1>
@@ -588,4 +594,63 @@
   ```
   Note: virtual ethernet devices are created in UP state, no need to bring them up manually after creation.
   
-  
+<h1 id="j4"> Link group management</h1>
+
+  Link groups are similar to port ranges found in managed switches. You can add network interfaces to a numbered group and perform operations on all the interfaces from that group at once.
+
+  Links not assigned to any group belong to group 0 aka "default".
+
+  <b id="j41">Add an interface to a group</b>
+```shell
+ip link set dev ${interface name} group ${group number}
+```
+  Examples:
+```shell
+ip link set dev eth0 group 42
+ip link set dev eth1 group 42
+```
+
+  <b id="j42">Remove an interface from a group</b>
+
+  This can be done by assigning it to the default group.
+```shell
+ip link set dev ${interface name} group 0
+ip link set dev ${interface} group default
+```
+  Examples:
+```shell
+ip link set dev tun10 group 0
+```
+
+  <b id="j43">Assign a symbolic name to a group</b>
+
+  Group names are stored in /etc/iproute2/group file. Symbolic name "default" for group 0 comes exactly from there. You can add your own, one per line, following the same "${number} ${name}" format. You can have up to 255 named groups.
+
+  Once you configured a group name, number and name can be used interchangeably in ip commands.
+
+  Example:
+```shell
+echo "10    customer-vlans" >> /etc/iproute2/group
+```
+  After that you can use that name in all operations, like in
+```shell
+ip link set dev eth0.100 group customer-vlans
+```
+  <b id="j44">Perform an operation on a group</b>
+```shell
+ip link set group ${group number} ${operation and arguments}
+```
+  Examples:
+```shell
+ip link set group 42 down
+ip link set group uplinks mtu 1200
+```
+  <b id="j45">View information about links from specific group</b>
+
+  Use usual information viewing command with "group ${group}" modifier.
+
+  Examples:
+```shell
+ip link list group 42
+ip address show group customers  
+```
