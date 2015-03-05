@@ -197,7 +197,7 @@ options    : TCPOptionsField      = {}              ({})
 
   可以通过Raw()来对报文的payload进行填充，通过这种方式来达到构造指定长度的报文
 ```python
->>> packet=Ether(dst="00:00:00:00:00:01",src="00:00:00:00:00:01")/IP(src="192.168.30.22",dst="192.168.30.254")/TCP()/Raw('abcdef')
+>>> packet=Ether(dst="00:00:00:00:00:02",src="00:00:00:00:00:01")/IP(src="192.168.30.22",dst="192.168.30.254")/TCP()/Raw('abcdef')
 ```
   * 其他命令
 
@@ -264,6 +264,15 @@ def sendp(x, inter=0, loop=0, iface=None, iface_hint=None, count=None, verbose=N
   > - count： 发送数目
     
   其他参数请详见源码
+  
+  **发送多个不同的报文时，可将这些报文汇集成list，然后发送**
+```python
+>>> pl=Ether(dst="00:00:00:00:01:01",src="00:00:00:00:00:01")/IP(src="192.168.30.21",dst="192.168.30.254")
+>>> p2=Ether(dst="00:00:00:00:01:01",src="00:00:00:00:00:02")/IP(src="192.168.30.22",dst="192.168.30.254")
+>>> p3=Ether(dst="00:00:00:00:01:01",src="00:00:00:00:00:03")/IP(src="192.168.30.23",dst="192.168.30.254")
+>>> p=[p1,p2,p3]
+>>> sendp(p,iface='eth0')
+```
   
   * send and receive packets
   
