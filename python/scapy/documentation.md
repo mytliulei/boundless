@@ -24,7 +24,8 @@ sudo pip install scapy
     
   > **Note: 下载源码包安装时，可能会由于某些依赖包未安装而失败，建议采用在线安装**
   
-  # 加载scapy
+# 加载scapy
+
     1. 启动python解释器
     2. 加载scapy包
 ```python
@@ -34,6 +35,7 @@ sudo pip install scapy
 # 构造包
   
   * 报文模板
+
   scapy内置了大量的报文模板，在python解释器下，可以通过ls查看
 ```python
 >>> ls()
@@ -73,6 +75,7 @@ type       : XShortEnumField      = (0)
   通过Ether报文模板，可以构造包含目的mac，源mac，类型字段的报文
   
   * 报文组装
+
   按照填充好的各类报文模板，可以组装成实际的报文，scapy通过`/`来组装
 ```python
 >>> packet=Ether(dst="00:00:00:00:00:01",src="00:00:00:00:00:01")/IP(src="192.168.30.22",dst="192.168.30.254")/TCP()
@@ -153,9 +156,11 @@ type       : XShortEnumField      = (0)
 ```
 
   * 报文payload
+
   可以通过Raw()来对报文的payload进行填充，通过这种方式来达到构造指定长度的报文
 ```python
 >>> packet=Ether(dst="00:00:00:00:00:01",src="00:00:00:00:00:01")/IP(src="192.168.30.22",dst="192.168.30.254")/TCP()/Raw('abcdef')
 ```
   * 其他命令
+
   可以通过lsc()来查看scapy提供的命令
