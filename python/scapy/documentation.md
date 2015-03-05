@@ -34,8 +34,12 @@ sudo pip install scapy
 
 # 构造包
   
+  scapy的包创建是按照我们的TCP/IP的四层参考模型来的，链路层，网络层，传输层，应用层
+  
+  Scapy为各个层都写了类，我们要做的就是把这些类实例化，对packet的一些操作就是调用这里类的方法或者改变类的参数取值，各个层都有各自的创建函数，比如IP（），TCP（），UDP()等等，不同层之间通过“/”来连接。
+  
   * 报文模板
-
+  
   scapy内置了大量的报文模板，在python解释器下，可以通过ls查看
 ```python
 >>> ls()
@@ -74,15 +78,49 @@ type       : XShortEnumField      = (0)
 ```
   通过Ether报文模板，可以构造包含目的mac，源mac，类型字段的报文
   
+  参数一般都有默认值，如果我们建立一个类的实例，如IP（），没有传给它参数，那么它的参数就是默认的
+  
+  > Note: 一般checksum，type等字段默认值为None，使用中不需要赋值，报文组装完毕后会自动计算这些字段
+  
   * 报文组装
 
   按照填充好的各类报文模板，可以组装成实际的报文，scapy通过`/`来组装
 ```python
->>> packet=Ether(dst="00:00:00:00:00:01",src="00:00:00:00:00:01")/IP(src="192.168.30.22",dst="192.168.30.254")/TCP()
+>>> p1=Ether(dst="00:00:00:00:00:01",src="00:00:00:00:00:01")/IP(src="192.168.30.22",dst="192.168.30.254")/TCP()
 ```
-  上述构造了一个tcp报文，可以通过show，show2来查看报文的各个字段内容
+  上述构造了一个tcp报文，可以通过ls, show，show2来查看报文的各个字段内容
 ```python
->>> packet.show()
+>>> ls(p1)
+dst        : DestMACField         = '00:00:00:00:00:01' (None)
+src        : SourceMACField       = '00:00:00:00:00:01' (None)
+type       : XShortEnumField      = 2048            (0)
+--
+version    : BitField             = 4               (4)
+ihl        : BitField             = None            (None)
+tos        : XByteField           = 0               (0)
+len        : ShortField           = None            (None)
+id         : ShortField           = 1               (1)
+flags      : FlagsField           = 0               (0)
+frag       : BitField             = 0               (0)
+ttl        : ByteField            = 64              (64)
+proto      : ByteEnumField        = 6               (0)
+chksum     : XShortField          = None            (None)
+src        : Emph                 = '192.168.30.22' (None)
+dst        : Emph                 = '192.168.30.254' ('127.0.0.1')
+options    : PacketListField      = []              ([])
+--
+sport      : ShortEnumField       = 20              (20)
+dport      : ShortEnumField       = 80              (80)
+seq        : IntField             = 0               (0)
+ack        : IntField             = 0               (0)
+dataofs    : BitField             = None            (None)
+reserved   : BitField             = 0               (0)
+flags      : FlagsField           = 2               (2)
+window     : ShortField           = 8192            (8192)
+chksum     : XShortField          = None            (None)
+urgptr     : ShortField           = 0               (0)
+options    : TCPOptionsField      = {}              ({})
+>>> p1.show()
 ###[ Ethernet ]###
   dst       = 00:00:00:00:00:01
   src       = 00:00:00:00:00:01
@@ -113,7 +151,7 @@ type       : XShortEnumField      = (0)
         chksum    = None
         urgptr    = 0
         options   = {}
->>> packet.show2()
+>>> p1.show2()
 ###[ Ethernet ]###
   dst       = 00:00:00:00:00:01
   src       = 00:00:00:00:00:01
@@ -207,3 +245,81 @@ tshark              : Sniff packets and print them calling pkt.show(), a bit lik
 wireshark           : Run wireshark on a list of packets
 wrpcap              : Write a list of packets to a pcap file
 ```
+# 发包
+
+  * send 与 sendp
+  
+  send()是在第三层发送数据包，sendp（）是在第二层，下面是sendp的定义：
+```python
+def sendp(x, inter=0, loop=0, iface=None, iface_hint=None, count=None, verbose=None, realtime=None, *args, **kargs):
+    """Send packets at layer 2
+    sendp(packets, [inter=0], [loop=0], [verbose=conf.verb]) -> None
+    """
+```
+  > 参数：
+  > - x： 编辑好的报文
+  > - iface： 发送的接口
+  > - inter： 发送间隔，单位是秒,默认是0
+  > - loop： 是否循环发送，默认否
+  > - count： 发送数目
+    
+  其他参数请详见源码
+  
+  * send and receive packets
+  
+  **交换机测试，这部分可以不看**  
+
+  The send and receive functions family will not only send stimuli and sniff responses but also match sent stimuli with received responses. 
+
+  Function sr(),sr1(),and srloop() all work at layer 3.
+  
+  sr() is for sending and receiving packets,it returns a couple of packet and answers,and the unanswered packets.
+  
+  sr1() only receive the first answer.
+  
+  srloop() is for sending a packet in loop and print the answer each time
+  
+  Function srp(),srp1(),and srploop() all work at layer 2.
+  
+  
+# 抓包
+  
+  * sniff
+```python
+def sniff(count=0, store=1, offline=None, prn = None, lfilter=None, L2socket=None, timeout=None,
+          opened_socket=None, stop_filter=None, *arg, **karg):
+    """Sniff packets
+    sniff([count=0,] [prn=None,] [store=1,] [offline=None,] [lfilter=None,] + L2ListenSocket args) -> list of packets
+
+    count: number of packets to capture. 0 means infinity
+    store: wether to store sniffed packets or discard them
+    prn: function to apply to each packet. If something is returned,
+         it is displayed. Ex:
+         ex: prn = lambda x: x.summary()
+    lfilter: python function applied to each packet to determine
+         if further action may be done
+         ex: lfilter = lambda x: x.haslayer(Padding)
+    offline: pcap file to read packets from, instead of sniffing them
+    timeout: stop sniffing after a given time (default: None)
+    L2socket: use the provided L2socket
+    opened_socket: provide an object ready to use .recv() on
+    stop_filter: python function applied to each packet to determine
+             if we have to stop the capture after this packet
+             ex: stop_filter = lambda x: x.haslayer(TCP)
+    """
+```
+  > 参数：
+  > - iface: 抓包接口
+  > - timeout: 抓包时间，默认是None，单位秒
+  > - filter: 抓包过滤表达式，格式与tcpdump相同
+  
+  > 返回值：抓到的报文的list，报文可使用show,show2,hexdump,ls等命令查看
+  
+  其他参数用法请查阅源码
+  
+# 统计
+
+  scapy并未提供统计命令或接口,统计方法归纳如下，如有其他方法请发送pull request，或联系mytliulei@gmail.com
+  
+  * 查看/sys/class/net/设备/statistics/ 下的统计项 
+  
