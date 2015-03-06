@@ -81,6 +81,12 @@
   * [Assign a symbolic name to a group](#j43)
   * [Perform an operation on a group](#j44)
   * [View information about links from specific group](#j45)
+5. [Neighbor (ARP and NDP) tables management](#j5)
+  * [View neighbor tables](#j51)
+  * [View neighbors for single interface](#j52)
+  * [Flush table for an interface](#j53)
+  * [Add a neighbor table entry](#j54)
+  * [Delete a neighbor table entry](#j55)
 
 ---  
 <h1 id="j1"> Address management</h1>
@@ -654,3 +660,53 @@ ip link set group uplinks mtu 1200
 ip link list group 42
 ip address show group customers  
 ```
+
+  <h1 id="j5">Neighbor (ARP and NDP) tables management</h1>
+
+  <b id="j51">View neighbor tables</b>
+```shell
+ip neighbor show
+```
+
+  All "show" commands support -4 and -6 options to view only IPv4 (ARP) or IPv6 (NDP) neighbors. By default all neighbors are displayed.
+
+  <b id="j52">View neighbors for single interface</b>
+```shell
+ip neighbor show dev ${interface name}
+```
+  Examples:
+```shell
+ip neighbor show dev eth0
+```
+
+  <b id="j53">Flush table for an interface</b>
+```shell
+ip neighbor flush dev ${interface name}
+```
+  Examples:
+```shell
+ip neighbor flush dev eth1
+```
+
+  <b id="j54">Add a neighbor table entry</b>
+```shell
+ip neighbor add ${network address} lladdr ${link layer address} dev ${interface name}
+```
+  Examples:
+```shell  
+ip neighbor add 192.0.2.1 lladdr 22:ce:e0:99:63:6f dev eth0
+```
+
+  One of the use cases for it is to add static entry for an interface with disabled ARP to restrict interface usage only by hosts with specific MAC addresses.
+
+  <b id="j55">Delete a neighbor table entry</b>
+```shell
+ip neighbor delete ${network address} lladdr ${link layer address} dev ${interface name}
+```
+  Examples:
+```shell
+ip neighbor delete 192.0.2.1 lladdr 22:ce:e0:99:63:6f dev eth0
+```
+
+  Allows to delete a static entry, or get rid ot an automatically learnt entry without flushing the table.
+  
