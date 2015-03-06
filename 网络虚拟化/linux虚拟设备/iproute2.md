@@ -87,6 +87,33 @@
   * [Flush table for an interface](#j53)
   * [Add a neighbor table entry](#j54)
   * [Delete a neighbor table entry](#j55)
+6. [Policy-based routing](#j6)
+  * [Create a policy route](#j61)
+  * [View policy routes](#j62)
+  * [General rule syntax](#j63)
+  * [Create a rule to match a source network](#j64)
+  * [Create a rule to match a destination network](#j65)
+  * [Create a rule to match a ToS field value](#j66)
+  * [Create a rule to match a firewall mark value](#j67)
+  * [Create a rule to match inbound interface](#j68)
+  * [Create a rule to match outbound interface](#j69)
+  * [Set rule priority](#j610)
+  * [Show all rules](#j611)
+  * [Delete a rule](#j612)
+  * [Delete all rules](#j613)
+7. [netconf (sysctl configuration viewing)](#j7)
+  * [View sysctl configuration for all interfaces](#j71)
+  * [View sysctl configuration for specific interface](#j72)
+8. [Network namespace management](#j8)
+  * [Create a namespace](#j81)
+  * [List existing namespaces](#j82)
+  * [Delete a namespace](#j83)
+  * [Run a process inside a namespace](#j84)
+  * [List all processes assigned to a namespace](#j85)
+  * [Identify process' primary namespace](#j86)
+  * [Assign network interface to a namespace](#j87)
+  * [Connect one namespace to another](#j88)
+  * [Monitor network namespace subsystem events](#j89)
 
 ---  
 <h1 id="j1"> Address management</h1>
@@ -709,4 +736,174 @@ ip neighbor delete 192.0.2.1 lladdr 22:ce:e0:99:63:6f dev eth0
 ```
 
   Allows to delete a static entry, or get rid ot an automatically learnt entry without flushing the table.
+  
+  <h1 id="j6">Policy-based routing</h1>
+
+  Policy-based routing (PBR) in Linux is designed the following way: first you create custom routing tables, then you create rules to tell the kernel it should use those tables instead of the default table for specific traffic.
+
+  Some tables are predefined:
+
+*local* (table 255)
+
+Contains control routes local and broadcast addresses.
+
+*main* (table 254)
+
+Contains all non-PBR routes. If you don't specify the table when adding a route, it goes here.
+
+*default* (table 253)
+
+Reserved for postprocessing, normally unused.
+
+  User-defined tables are created automatically when you add the first route to them.
+
+  <b id="j61">Create a policy route</b>
+```shell
+ip route add ${route options} table ${table id or name}
+```
+  Examples:
+```shell
+ip route add 192.0.2.0/27 via 203.0.113.1 table 10
+ip route add 0.0.0.0/0 via 192.168.0.1 table ISP2
+ip route add 2001:db8::/48 dev eth1 table 100
+```
+
+  **Notes**: You can use any route options described in "Route management" section in policy routes too, the only difference is the "table ${table id/name}" part at the end.
+
+  Numeric table identifiers and names can be used interchangeably. To create your own symbolic names, edit **/etc/iproute2/rt_tables** config file.
+
+  "delete", "change", "replace", or any other route actions work with any table too.
+
+  "ip route ... table main" or "ip route ... table 254" would have exact same effect to commands without a table part.
+
+  <b id="j62">View policy routes</b>
+```shell
+ip route show table ${table id or name}
+```
+  Examples:
+```shell
+ip route show table 100
+ip route show table test
+```
+
+  Note: in this case you need the "show" word, the shortands like "ip route table 120" do not work because the command would be ambiguous.
+
+  <b id="j63">General rule syntax</b>
+```shell
+ip rule add ${options} <lookup ${table id or name}|blackhole|prohibit|unreachable>
+```
+  Traffic that matches the ${options} (described below) will be routed according to the table with specified name/id instead of the "main"/254 table if "lookup" action is used.
+
+  "blackhole", "prohibit", and "unreachable" actions that work the same way to route types with same names. In most of examples we will use "lookup" action as the most common.
+
+  For IPv6 rules, use "ip -6", the rest of the syntax is the same.
+
+  "table ${table id or name}" can be used as alias to "lookup ${table id or name}".
+
+  <b id="j64">Create a rule to match a source network</b>
+```shell
+ip rule add from ${source network} ${action}
+```
+  Examples:
+```shell
+ip rule add from 192.0.2.0/24 lookup 10
+ip -6 rule add from 2001:db8::/32 prohibit
+```
+  Notes: "all" can be used as shortand to 0.0.0.0/0 or ::/0
+
+  <b id="j65">Create a rule to match a destination network</b>
+```shell
+ip rule add to ${destination network} ${action}
+```
+  Examples:
+```
+ip rule add to 192.0.2.0/24 blackhole
+ip -6 rule add to 2001:db8::/32 lookup 100
+```
+
+  <b id="j66">Create a rule to match a ToS field value</b>
+```shell
+ip rule add tos ${ToS value} ${action}
+```
+  Examples:
+```shell
+ip rule add tos 0x10 lookup 110
+```
+
+  <b id="j67">Create a rule to match a firewall mark value</b>
+```shell
+ip rule add fwmark ${mark} ${action}
+```
+  Examples:
+```shell
+ip rule add fwmark 0x11 lookup 100
+```
+  Note: See iptables documentation to find out how to set the mark.
+
+  <b id="j68">Create a rule to match inbound interface</b>
+```shell
+ip rule add iif ${interface name} ${action}
+```
+  Examples:
+```shell
+ip rule add iif eth0 lookup 10
+ip rule add iif lo lookup 20
+```
+  Rule with "iif lo" (loopback) will match locally generated traffic.
+
+  <b id="j69">Create a rule to match outbound interface</b>
+```shell
+ip rule add oif ${interface name} ${action}
+```
+  Examples:
+```shell
+ip rule add oif eth0 lookup 10
+```
+  Note: this works only for locally generated traffic.
+
+  <b id="j610">Set rule priority</b>
+```shell
+ip rule add ${options} ${action} priority ${value}
+```
+  Examples:
+```shell
+ip rule add from 192.0.2.0/25 lookup 10 priority 10
+ip rule add from 192.0.2.0/24 lookup 20 priority 20
+```
+  Note: As rules are traversed from the lowest to the highest priority and processing stops at first match, you need to put more specific rules before less specific. The above example demonstrates rules for 192.0.2.0/24 and its subnet 192.0.2.0/25. If the priorities were reversed and the rule for /25 was placed after the rule for /24, it would never be reached.
+
+  <b id="j611">Show all rules</b>
+```shell
+ip rule show
+ip -6 rule show
+```
+
+  <b id="j612">Delete a rule</b>
+```shell
+ip rule del ${options} ${action}
+```
+  Examples:
+```shell
+ip rule del 192.0.2.0/24 lookup 10
+```
+  Notes: You can copy/paste from the output of "ip rule show"/"ip -6 rule show".
+
+  <b id="j613">Delete all rules</b>
+```shell
+ip rule flush
+ip -6 rule flush
+```
+  Notes: this operation is highly disruprive. Even if you have not configured any rules, "from all lookup main" rules are initialized by default. On an unconfigured machine you can see this:
+```shell
+$ ip rule show
+0:	from all lookup local 
+32766:	from all lookup main 
+32767:	from all lookup default 
+```
+```shell
+$ ip -6 rule show
+0:	from all lookup local 
+32766:	from all lookup main 
+```
+  The "from all lookup local" rule is special and cannot be deleted. The "from all lookup main" is not, there may be valid reasons not to have it, e.g. if you want to route only traffic you created explicit rules for. As a side effect, if you do "ip rule flush", this rule will be deleted, which will make the system stop routing any traffic until you restore your rules.
   
