@@ -907,3 +907,121 @@ $ ip -6 rule show
 ```
   The "from all lookup local" rule is special and cannot be deleted. The "from all lookup main" is not, there may be valid reasons not to have it, e.g. if you want to route only traffic you created explicit rules for. As a side effect, if you do "ip rule flush", this rule will be deleted, which will make the system stop routing any traffic until you restore your rules.
   
+  <h1 id="j7">netconf (sysctl configuration viewing)</h1>
+
+  <b id="j71">View sysctl configuration for all interfaces</b>
+```shell
+ip netconf show
+```
+
+  <b id="j72">View sysctl configuration for specific interface</b>
+```shell
+ip netconf show dev ${interface}
+```
+  Examples:
+```shell
+ip netconf show dev eth0
+```
+
+  <h1 id="j8">Network namespace management</h1>
+
+  Network namespaces are isolated network stack instances within a single machine. They can be used for security domain separation, managing traffic flows between virtual machines and so on.
+
+  Every namespace is a complete copy of the networking stack with its own interfaces, addresses, routes etc. You can run processes inside a namespace and bridge namespaces to physical interfaces.
+
+  <b id="j81">Create a namespace</b>
+```shell
+ip netns add ${namespace name}
+```
+  Examples:
+```shell
+ip netns add foo
+```
+
+  <b id="j82">List existing namespaces</b>
+```shell
+ip netns list
+```
+
+  <b id="j83">Delete a namespace</b>
+```shell
+ip netns delete ${namespace name}
+```
+  Examples:
+```shell
+ip netns delete foo
+```
+
+  <b id="j84">Run a process inside a namespace</b>
+```shell
+ip netns exec ${namespace name} ${command}
+```
+  Examples:
+```
+ip netns exec foo /bin/sh
+```
+  Note: assigning a process to a non-default namespace requires root privileges.
+
+  You can run any processes inside a namespace, in particular you can run "ip" itself, commands like in this "ip netns exec foo ip link list" in this section are not a special syntax but simply executing another copy of "ip" in a namespace. You can run an interactive shell inside a namespace as well.
+
+  <b id="j85">List all processes assigned to a namespace</b>
+```shell
+ip netns pids ${namespace name}
+```
+  The output will be a list of PIDs.
+
+  <b id="j86">Identify process' primary namespace</b>
+```shell
+ip netns identify ${pid}
+```
+  Examples:
+```shell
+ip netns identify 9000
+```
+
+  <b id="j87">Assign network interface to a namespace</b>
+```shell
+ip link set dev ${interface name} netns ${namespace name}
+ip link set dev ${interface name} netns ${pid}
+```
+  Examples:
+```shell
+ip link set dev eth0.100 netns foo
+```
+  Note: once you assign an interface to a namespace, it disappears from the default namespace and you will have to perform all operations with it via "ip netns exec ${netspace name}", as in "ip netns exec ${netspace name} ip link set dev dummy0 down".
+
+  Moreover, when you move an interface to another namespace, it loses all existing configuration such as IP addresses configured on it and goes to DOWN state. You need to bring it back up and reconfigure.
+
+  If you specify a PID instead of a namespace name, the interface gets assigned to the primary namespace of the process with that PID. This way you can reassign an interface back to default namespace with e.g. "ip netns exec ${namespace name} ip link set dev ${intf} netns 1" (since init or another process with PID 1 is pretty much guaranteed to be in default namespace).
+
+  <b id="j88">Connect one namespace to another</b>
+
+  This can be done by creating two veth links and assigning them two different namespaces. Suppose you want to connect namespace "foo" to the default namespace.
+
+Create a pair of veth devices:
+```shell
+ip link add name veth1 type veth peer name veth2
+```
+Move veth2 to namespace foo:
+```shell
+ip link set dev veth2 netns foo
+```
+Bring veth2 and add an address in "foo" namespace:
+```shell
+ip netns exec foo ip link set dev veth2 up
+ip netns exec foo ip address add 10.1.1.1/24 dev veth2
+```
+Add an address to veth1, which stays in the default namespace:
+```shell
+ip address add 10.1.1.2/24 dev veth1
+```
+  Now you can ping 10.1.1.1 which if in foo namespace, and setup routes to subnets configured in other interfaces of that namespace.
+
+  If you want switching instead of routing, you can bridge those veth interfaces with other interfaces in corresponding namespaces. Same technique can be used to connect namespaces to physical networks.
+
+  <b id="j89">Monitor network namespace subsystem events</b>
+```shell
+ip netns monitor
+```
+  Displays events such as creation and deletion of namespaces when they occur.
+  
