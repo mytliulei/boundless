@@ -119,9 +119,32 @@
   * [Add a link-layer multicast address](#j92)
   * [View multicast routes](#j93)
 10. [Network event monitoring](#j10)
-  * [Monitor all events](#j101)
-  * [Monitor specific events](#j102)
-  * [Read a log file produced by rtmon](#j103)
+  * [Monitor all events](#j1001)
+  * [Monitor specific events](#j1002)
+  * [Read a log file produced by rtmon](#j1003)
+11. [Tunnel management](#j11)
+  * [Create an IPIP tunnel](#j1101)
+	* [Create a SIT tunnel](#j1102)
+	* [Create an IPIP6 tunnel](#j1103)
+	* [Create an IP6IP6 tunnel](#j1104)
+	* [Create a gretap (ethernet over GRE) device](#j1105)
+	* [Create a GRE tunnel](#j1106)
+	* [Create multiple GRE tunnels to the same endpoint](#j1107)
+	* [Create a point-to-multipoint GRE tunnel](#j1108)
+	* [Create a GRE tunnel over IPv6](#j1109)
+	* [Delete a tunnel](#j1110)
+	* [Modify a tunnel](#j1111)
+	* [View tunnel information](#j1112)
+12. [L2TPv3 pseudowire management](#j12)
+	* [Create an L2TPv3 tunnel over UDP](#j1201)
+	* [Create an L2TPv3 tunnel over IP](#j1202)
+	* [Create an L2TPv3 session](#j1203)
+	* [Delete an L2TPv3 session](#j1204)
+	* [Delete an L2TPv3 tunnel](#j1205)
+	* [View L2TPv3 tunnel information](#j1206)
+	* [View L2TPv3 session information](#j1207)
+13. [VXLAN management](#j13)
+	* [Create a VXLAN link](#j1301)
 
 ---  
 <h1 id="j1"> Address management</h1>
@@ -1072,7 +1095,7 @@ ip mroute show
 
   You can monitor certain network events with iproute2, such as changes in network configuration, routing tables, and ARP/NDP tables.
 
-  <b id="j101">Monitor all events</b>
+  <b id="j1001">Monitor all events</b>
 
   You may either call the command without parameters or explicitly specify "all".
 ```shell
@@ -1080,7 +1103,7 @@ ip monitor
 ip monitor all
 ```
 
-  <b id="j102">Monitor specific events</b>
+  <b id="j1002">Monitor specific events</b>
 ```shell
 ip monitor ${event type}
 ```
@@ -1103,13 +1126,267 @@ ip -6 monitor neigh
 ip -4 monitor address
 ```
 
-  <b id="j103">Read a log file produced by rtmon</b>
+  <b id="j1003">Read a log file produced by rtmon</b>
 
   iproute2 includes a program called "rtmon" that serves essentially the same purpose, but writes events to a binary log file instead of displaying them. "ip monitor" command allows you to read files created by the program".
+  
 ```shell
 ip monitor ${event type} file ${path to the log file}
 ```
   rtmon syntax is similar to that of "ip monitor", except event type is limited to link, address, route, and all; and address family is specified in "-family" option.
+  
 ```shell
 rtmon [-family <inet|inet6>] [<route|link|address|all>] file ${log file path}
 ```
+
+	<h1 id="j11">Tunnel management</h1>
+
+	Tunnels are "network wormholes" that look like normal interfaces, but packets sent through them are encapsulated into another protocol and sent to the other side of tunnel through multiple hosts, then decapsulated and processed in usual way, so you can pretend two machines have direct connectivity, while they in fact do not.
+
+	This is often used for virtual private networks (in conjunction with encrypted transport protocols like IPsec), or connecting networks that use some protocol via an intermediate network that does not use it (e.g. IPv6 networks separated by an IPv4-only segment).
+
+	Note: tunnels on their own offer zero security. They are as secure as their underlying network. So if you need security, use them over an encrypted transport, e.g. IPsec.
+
+	Linux currently supports IPIP (IPv4 in IPv4), SIT (IPv6 in IPv4), IP6IP6 (IPv6 in IPv6), IPIP6 (IPv4 in IPv6), GRE (virtually anything in anything), and, in very recent versions, VTI (IPv4 in IPsec).
+
+	Note that tunnels are created in DOWN state, you need to bring them up.
+
+	In this section ${local endpoint address} and ${remote endpoint address} refer to addresses assigned to physical interfaces of endpoint. ${address} refers to the address assigned to tunnel interface.
+
+	<b id="j1101">Create an IPIP tunnel</b>
+```shell
+ip tunnel add ${interface name} mode ipip local ${local endpoint address} remote ${remote endpoint address}
+```
+Examples:
+```shell
+ip runnel add tun0 mode ipip local 192.0.2.1 remote 198.51.100.3
+ip link set dev tun0 up
+ip address add 10.0.0.1/30 dev tun0
+```
+	<b id="j1102">Create a SIT tunnel</b>
+```shell
+sudo ip tunnel add ${interface name} mode sit local ${local endpoint address} remote ${remote endpoint address}
+```
+Examples:
+```shell
+ip tunnel add tun9 mode sit local 192.0.2.1 remote 198.51.100.3
+ip link set dev tun9 up
+ip address add 2001:db8:1::1/64 dev tun9
+```
+	This type of tunnels is commonly used to provide an IPv4-connected network with IPv6 connectivity. There are so called "tunnel brokers" that provide it to everyone interested, e.g. Hurricane Electric tunnelbroker.net.
+
+	<b id="j1103">Create an IPIP6 tunnel</b>
+```shell
+ip -6 tunnel add ${interface name} mode ipip6 local ${local endpoint address} remote ${remote endpoint address}
+```
+Examples:
+```shell
+ip -6 tunnel add tun8 mode ipip6 local 2001:db8:1::1 remote 2001:db8:1::2
+```
+	This type of tunnels will be widely used when transit operators phase IPv4 out (i.e. not any soon).
+
+	<b id="j1104">Create an IP6IP6 tunnel</b>
+```shell
+ip -6 tunnel add ${interface name} mode ip6ip6 local ${local endpoint address} remote ${remote endpoint address}
+```
+	Examples:
+```shell
+ip -6 tunnel add tun3 mode ip6ip6 local 2001:db8:1::1 remote 2001:db8:1::2
+ip link set dev tun3 up
+ip address add 2001:db8:2:2::1/64 dev tun3
+```
+	Just like IPIP6 these ones aren't going to be generally useful any soon.
+
+	<b id="j1105">Create a gretap (ethernet over GRE) device</b>
+```shell
+ip link add ${interface name} type gretap local ${local endpoint address} remote ${remote endpoint address}
+```
+Examples:
+```shell
+ip link add gretap0 type gretap local 192.0.2.1 remote 203.0.113.3
+```
+	This type of tunnels encapculates ethernet frames into IPv4 packets.
+
+	Recent kernel and iproute2 versions also support gretap over IPv6, you need to replace the mode with "ip6gretap" to create an IPv6-based link.
+
+	This probably should have been in "Links management" section, but as it involves encapsulation, it's here. Tunnel interface created this way looks like an L2 link, and it can be added to a bridge group. This is used to connect L2 segments via a routed network.
+
+	<b id="j1106">Create a GRE tunnel</b>
+```shell
+ip tunnel add ${interface name} mode gre local ${local endpoint address} remote ${remote endpoint address}
+```
+Examples:
+```shell
+ip tunnel add tun6 mode gre local 192.0.2.1 remote 203.0.113.3
+ip link set dev tun6 up
+ip address add 192.168.0.1/30 dev tun6
+ip address add 2001:db8:1::1/64 dev tun6
+```
+	GRE can encapsulate both IPv4 and IPv6 at the same time. However, by default it uses IPv4 for transport, for GRE over IPv6 there is a separate tunnel mode, "ip6gre".
+
+	<b id="j1107">Create multiple GRE tunnels to the same endpoint</b>
+```shell
+ip tunnel add ${interface name} mode gre local ${local endpoint address} remote ${remote endpoint address} key ${key value}
+```
+Examples:
+```shell
+ip tunnel add tun4 mode gre local 192.0.2.1 remote 203.0.113.6 key 123
+ip tunnel add tun5 mode gre local 192.0.2.1 remote 203.0.113.6 key 124
+```
+	Keyed tunnels can be used at the same time to unkeyed too. Key may be in dotted decimal IPv4-like format.
+
+	Note that key does not add any security to the tunnel. It's just an identifier used to distinguish one tunnel from another.
+
+	<b id="j1108">Create a point-to-multipoint GRE tunnel</b>
+```shell
+ip tunnel add ${interface name} mode gre local ${local endpoint address} key ${key value}
+```
+Examples:
+```shell
+ip tunnel add tun8 mode gre local 192.0.2.1 key 1234
+ip link set dev tun8 up
+ip address add 10.0.0.1/27 dev tun8
+```
+	Note the absence of ${remote endpoint address}. This is the same to what is called "mode gre multipoint" in Cisco IOS.
+
+	In the absence of remote endpoint address the key is the only way to identify the tunnel traffic, so ${key value} is required.
+
+	This type of tunnels allows you to communicate with multiple endpoints by using the same tunnel interface. It's commonly used in complex VPN setups with multiple endpoints communicating to one another (in Cisco terminology, "dynamic multipoint VPN").
+
+	As there is no explicit remote endpoint address, obviously it is not enough to just create a tunnel. Your system needs to know where the other endpoints are.
+
+	In real life NHRP (Next Hop Resolution Protocol) is used for it. For testing you can add peers manually (given remote endpoint uses 203.0.113.6 address on its physical interface and 10.0.0.2 on the tunnel):
+```shell
+ip neighbor add 10.0.0.2 lladdr 203.0.113.6 dev tun8
+```
+	You will have to do it on the remote endpoint too, like:
+```shell
+ip neighbor add 10.0.0.1 lladdr 192.0.2.1 dev tun8
+```
+	Note that link-layer address and neighbor address are both IP addresses, so they are on the same OSI layer. This one of the cases where link-layer address concept gets interesting.
+
+	<b id="j1109">Create a GRE tunnel over IPv6</b>
+
+	Recent kernel and iproute2 versions support GRE over IPv6. Point-to-point with no key:
+```shell
+ip -6 tunnel add name ${interface name} mode ip6gre local ${local endpoint} remote ${remote endpoint}
+```
+	It should support all options and features supported by the IPv4 GRE described above.
+
+	<b id="j1110">Delete a tunnel</b>
+```shell
+ip tunnel del ${interface name}
+```
+	Examples:
+```shell
+ip tunnel del gre1
+```
+	Note that in older iproute2 versions this command did not support the full "delete" word, only "del". Recent versions allow both full and abbreviated forms (tested in iproute2-ss131122).
+
+	<b id="j1111">Modify a tunnel</b>
+```shell
+ip tunnel change ${interface name} ${options}
+```
+	Examples:
+```shell
+ip tunnel change tun0 remote 203.0.113.89
+ip tunnel change tun10 key 23456
+```
+	Note: Apparently you can't add a key to previously unkeyed tunnel. Not sure if it's a bug or a feature. Also, you can't change tunnel mode on the fly, for obvious reasons.
+
+	<b id="j1112">View tunnel information</b>
+```shell
+ip tunnel show
+ip tunnel show ${interface name}
+```
+	Examples:
+```shell
+ip tun show tun99 
+tun99: gre/ip  remote 10.46.1.20  local 10.91.19.110  ttl inherit 
+```
+
+	<h1 id="j12">L2TPv3 pseudowire management</h1>
+
+	L2TPv3 is a tunneling protocol commonly used for L2 pseudowires.
+
+	In many distros L2TPv3 is compiled as a module, and may not be loaded by default. If you get a "RTNETLINK answers: No such file or directory" and "Error talking to the kernel" message to any "ip l2tp" command, this is likely the case. Load l2tp\_netlink and l2tp\_eth modules. If you want to use L2TPv3 over IP rather than UDP, also load l2tp_ip.
+
+Compared to other tunneling protocol implementations in Linux, L2TPv3 terminology is somewhat reversed. You create a tunnel, and then bind sessions to it. You can bind multiple sessions with different identifiers to the same tunnel. Virtual network interfaces (by default named l2tpethX) are associated with sessions.
+
+Note: Linux kernel implements only handling of data frames, so you can create only unmaged tunnels with iproute2, with all settings configured manually on both sides. If you want to use L2TP for remote access VPN or something else other than fixed pseudowire, you need a userspace daemon to handle it. This is outside of this document scope.
+
+Create an L2TPv3 tunnel over UDP
+
+ip l2tp add tunnel \
+tunnel_id ${local tunnel numeric identifier} \
+peer_tunnel_id ${remote tunnel numeric identifier} \
+udp_sport ${source port} \
+udp_dport ${destination port} \
+encap udp \
+local ${local endpoint address} \
+remote ${remote endpoint address}
+Examples:
+ip l2tp add tunnel \
+tunnel_id 1 \
+peer_tunnel_id 1 \
+udp_sport 5000 \
+udp_dport 5000 \ 
+encap udp \
+local 192.0.2.1 \ 
+remote 203.0.113.2
+Note: Tunnel identifiers and other settings on both endpoints must match.
+
+Create an L2TPv3 tunnel over IP
+
+ip l2tp add tunnel \
+tunnel_id ${local tunnel numeric identifier} \
+peer_tunnel_id {remote tunnel numeric identifier } \
+encap ip \
+local 192.0.2.1 \
+remote 203.0.113.2
+          
+L2TPv3 encapsulated directly into IP offers less overhead, bug generally is unable to pass through NAT.
+
+Create an L2TPv3 session
+
+ip l2tp add session tunnel_id ${local tunnel identifier} \
+session_id ${local session numeric identifier} \
+peer_session_id ${remote session numeric identifier}
+          
+Examples:
+ip l2tp add session tunnel_id 1 \ 
+session_id 10 \
+peer_session_id 10
+       	  
+Notes: tunnel_id value must match a value of previously created tunnel. Session identifiers on both endpoints must match.
+
+Once you create a tunnel and a session, l2tpethX interface will appear, in down state. Change the state to up and bridge it with another interface or assign	an address.
+
+Delete an L2TPv3 session
+
+ip l2tp del session tunnel_id ${tunnel identifier} \
+session_id ${session identifier}
+          
+Examples
+ip l2tp del session tunnel_id 1 session_id 1
+Delete an L2TPv3 tunnel
+
+ip l2tp del tunnel tunnel_id ${tunnel identifier}
+Examples
+ip l2tp del tunnel tunnel_id 1
+Note: You need to delete all sessions associated with a tunnel before deleting it.
+
+View L2TPv3 tunnel information
+
+ip l2tp show tunnel
+ip l2tp show tunnel tunnel_id ${tunnel identifier}
+Examples:
+ip l2tp show tunnel tunnel_id 12
+View L2TPv3 session information
+
+ip l2tp show session
+ip l2tp show session session_id ${session identifier} \
+tunnel_id ${tunnel identifier}
+          
+Examples:
+ip l2tp show session session_id 1 tunnel_id 12
