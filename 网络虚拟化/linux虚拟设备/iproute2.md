@@ -1404,3 +1404,28 @@ Examples:
 ```shell
 ip l2tp show session session_id 1 tunnel_id 12
 ```
+
+  <h1 id="jj13">VXLAN management</h1>
+
+  VXLAN is a layer 2 tunneling protocol that is commonly used in conjunction with virtualization systems such as KVM to connect virtual machines running on different hypervisor nodes to each other and to outside world.
+
+  Unlike GRE or L2TPv3 that are point to point, VXLAN replicates some properties of multiple access switched networks by using IP multicast. Also it supports virtual network separation by transmitting a network identifier along with the frame.
+
+  The downside is that you will need to use a multicast routing protocol, typically PIM-SM, to get it to work over routed networks.
+
+  The underlying encapsulation protocol for VXLAN is UDP.
+
+  <b id="jj1301">Create a VXLAN link</b>
+```shell
+ip link add name ${interface name} type vxlan \ 
+   id <0-16777215> \ 
+   dev ${source interface} \ 
+   group ${multicast address
+```
+Example:
+```shell
+ip link add name vxlan0 type vxlan \ 
+   id 42 dev eth0 group 239.0.0.1
+```
+  After that you need to bring the link up and either bridge it with another interface or assign an address.
+  
