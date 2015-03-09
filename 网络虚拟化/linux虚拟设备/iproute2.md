@@ -114,6 +114,14 @@
   * [Assign network interface to a namespace](#j87)
   * [Connect one namespace to another](#j88)
   * [Monitor network namespace subsystem events](#j89)
+9. [Multicast management](#j9)
+  * [View multicast groups](#j91)
+  * [Add a link-layer multicast address](#j92)
+  * [View multicast routes](#j93)
+10. [Network event monitoring](#j10)
+  * [Monitor all events](#j101)
+  * [Monitor specific events](#j102)
+  * [Read a log file produced by rtmon](#j103)
 
 ---  
 <h1 id="j1"> Address management</h1>
@@ -1025,3 +1033,83 @@ ip netns monitor
 ```
   Displays events such as creation and deletion of namespaces when they occur.
   
+  <h1 id="j9">Multicast management</h1>
+
+  Multicast is mostly handled by applications and routing daemons, so there is not much you can and should do manually here. Multicast-related ip commands are mostly useful for debug.
+
+  <b id="j91">View multicast groups</b>
+```shell
+ip maddress show
+ip maddress show ${interface name}
+```
+  Example:
+```shell
+$ip maddress show dev lo
+1:	lo
+	inet  224.0.0.1
+	inet6 ff02::1
+	inet6 ff01::1
+```
+
+  <b id="j92">Add a link-layer multicast address</b>
+
+  You cannot join an IP multicast group manually, but you can add a multicast MAC address (even though it's rarely needed).
+```shell
+ip maddress add ${MAC address} dev ${interface name}
+```
+  Example:
+```shell
+ip maddress add 01:00:5e:00:00:ab dev eth0
+```
+  <b id="j93">View multicast routes</b>
+
+  Multicast routes cannot be added manually, so this command can only show multicast routes installed by a routing daemon. It supports the same modifiers to unicast route viewing commands (iif, table, from etc.).
+```shell
+ip mroute show
+```
+
+  <h1 id="j10">Network event monitoring</h1>
+
+  You can monitor certain network events with iproute2, such as changes in network configuration, routing tables, and ARP/NDP tables.
+
+  <b id="j101">Monitor all events</b>
+
+  You may either call the command without parameters or explicitly specify "all".
+```shell
+ip monitor
+ip monitor all
+```
+
+  <b id="j102">Monitor specific events</b>
+```shell
+ip monitor ${event type}
+```
+  Event type can be:
+
+> link: Link state: interfaces going up and down, virtual interfaces getting created or destroyed etc.
+>
+> address: Link address changes.
+>
+> route: Routing table changes.
+> 
+> mroute: Multicast routing changes.
+> 
+> neigh: Changes in neighbor (ARP and NDP) tables.
+
+  When there are distinct IPv4 and IPv6 subsystems, the usual "-4" and "-6" options allow you to display events only for specified protocol. As in:
+```shell
+ip -4 monitor route
+ip -6 monitor neigh
+ip -4 monitor address
+```
+
+  <b id="j103">Read a log file produced by rtmon</b>
+
+  iproute2 includes a program called "rtmon" that serves essentially the same purpose, but writes events to a binary log file instead of displaying them. "ip monitor" command allows you to read files created by the program".
+```shell
+ip monitor ${event type} file ${path to the log file}
+```
+  rtmon syntax is similar to that of "ip monitor", except event type is limited to link, address, route, and all; and address family is specified in "-family" option.
+```shell
+rtmon [-family <inet|inet6>] [<route|link|address|all>] file ${log file path}
+```
