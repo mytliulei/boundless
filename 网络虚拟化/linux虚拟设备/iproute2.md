@@ -122,7 +122,7 @@
   * [Monitor all events](#j1001)
   * [Monitor specific events](#j1002)
   * [Read a log file produced by rtmon](#j1003)
-11. [Tunnel management](#j11)
+11. [Tunnel management](#jj11)
   * [Create an IPIP tunnel](#j1101)
 	* [Create a SIT tunnel](#j1102)
 	* [Create an IPIP6 tunnel](#j1103)
@@ -135,7 +135,7 @@
 	* [Delete a tunnel](#j1110)
 	* [Modify a tunnel](#j1111)
 	* [View tunnel information](#j1112)
-12. [L2TPv3 pseudowire management](#j12)
+12. [L2TPv3 pseudowire management](#jj12)
 	* [Create an L2TPv3 tunnel over UDP](#j1201)
 	* [Create an L2TPv3 tunnel over IP](#j1202)
 	* [Create an L2TPv3 session](#j1203)
@@ -143,7 +143,7 @@
 	* [Delete an L2TPv3 tunnel](#j1205)
 	* [View L2TPv3 tunnel information](#j1206)
 	* [View L2TPv3 session information](#j1207)
-13. [VXLAN management](#j13)
+13. [VXLAN management](#jj13)
 	* [Create a VXLAN link](#j1301)
 
 ---  
@@ -1139,7 +1139,7 @@ ip monitor ${event type} file ${path to the log file}
 rtmon [-family <inet|inet6>] [<route|link|address|all>] file ${log file path}
 ```
 
-	<h1 id="j11">Tunnel management</h1>
+	<h1 id="jj11">Tunnel management</h1>
 
 	Tunnels are "network wormholes" that look like normal interfaces, but packets sent through them are encapsulated into another protocol and sent to the other side of tunnel through multiple hosts, then decapsulated and processed in usual way, so you can pretend two machines have direct connectivity, while they in fact do not.
 
@@ -1305,7 +1305,7 @@ ip tun show tun99
 tun99: gre/ip  remote 10.46.1.20  local 10.91.19.110  ttl inherit 
 ```
 
-	<h1 id="j12">L2TPv3 pseudowire management</h1>
+	<h1 id="jj12">L2TPv3 pseudowire management</h1>
 
 	L2TPv3 is a tunneling protocol commonly used for L2 pseudowires.
 
