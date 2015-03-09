@@ -1141,17 +1141,17 @@ rtmon [-family <inet|inet6>] [<route|link|address|all>] file ${log file path}
 
   <h1 id="jj11">Tunnel management</h1>
 
-	Tunnels are "network wormholes" that look like normal interfaces, but packets sent through them are encapsulated into another protocol and sent to the other side of tunnel through multiple hosts, then decapsulated and processed in usual way, so you can pretend two machines have direct connectivity, while they in fact do not.
+  Tunnels are "network wormholes" that look like normal interfaces, but packets sent through them are encapsulated into another protocol and sent to the other side of tunnel through multiple hosts, then decapsulated and processed in usual way, so you can pretend two machines have direct connectivity, while they in fact do not.
 
-	This is often used for virtual private networks (in conjunction with encrypted transport protocols like IPsec), or connecting networks that use some protocol via an intermediate network that does not use it (e.g. IPv6 networks separated by an IPv4-only segment).
+  This is often used for virtual private networks (in conjunction with encrypted transport protocols like IPsec), or connecting networks that use some protocol via an intermediate network that does not use it (e.g. IPv6 networks separated by an IPv4-only segment).
 
-	Note: tunnels on their own offer zero security. They are as secure as their underlying network. So if you need security, use them over an encrypted transport, e.g. IPsec.
+  Note: tunnels on their own offer zero security. They are as secure as their underlying network. So if you need security, use them over an encrypted transport, e.g. IPsec.
 
-	Linux currently supports IPIP (IPv4 in IPv4), SIT (IPv6 in IPv4), IP6IP6 (IPv6 in IPv6), IPIP6 (IPv4 in IPv6), GRE (virtually anything in anything), and, in very recent versions, VTI (IPv4 in IPsec).
+  Linux currently supports IPIP (IPv4 in IPv4), SIT (IPv6 in IPv4), IP6IP6 (IPv6 in IPv6), IPIP6 (IPv4 in IPv6), GRE (virtually anything in anything), and, in very recent versions, VTI (IPv4 in IPsec).
 
-	Note that tunnels are created in DOWN state, you need to bring them up.
+  Note that tunnels are created in DOWN state, you need to bring them up.
 
-	In this section ${local endpoint address} and ${remote endpoint address} refer to addresses assigned to physical interfaces of endpoint. ${address} refers to the address assigned to tunnel interface.
+  In this section ${local endpoint address} and ${remote endpoint address} refer to addresses assigned to physical interfaces of endpoint. ${address} refers to the address assigned to tunnel interface.
 
   <b id="j1101">Create an IPIP tunnel</b>
 ```shell
@@ -1307,9 +1307,9 @@ tun99: gre/ip  remote 10.46.1.20  local 10.91.19.110  ttl inherit
 
   <h1 id="jj12">L2TPv3 pseudowire management</h1>
 
-	L2TPv3 is a tunneling protocol commonly used for L2 pseudowires.
-
-	In many distros L2TPv3 is compiled as a module, and may not be loaded by default. If you get a "RTNETLINK answers: No such file or directory" and "Error talking to the kernel" message to any "ip l2tp" command, this is likely the case. Load l2tp_netlink and l2tp_eth modules. If you want to use L2TPv3 over IP rather than UDP, also load l2tp_ip.
+  L2TPv3 is a tunneling protocol commonly used for L2 pseudowires.
+  
+  In many distros L2TPv3 is compiled as a module, and may not be loaded by default. If you get a "RTNETLINK answers: No such file or directory" and "Error talking to the kernel" message to any "ip l2tp" command, this is likely the case. Load l2tp_netlink and l2tp_eth modules. If you want to use L2TPv3 over IP rather than UDP, also load l2tp_ip.
 
   Compared to other tunneling protocol implementations in Linux, L2TPv3 terminology is somewhat reversed. You create a tunnel, and then bind sessions to it. You can bind multiple sessions with different identifiers to the same tunnel. Virtual network interfaces (by default named l2tpethX) are associated with sessions.
 
