@@ -106,7 +106,7 @@ docker exec s1 /etc/init.d/xinetd start
  docker port s1
  23/tcp -> 0.0.0.0:49186
  ```
-  * telnet到容器
+  * telnet到容器,用户名密码为admin:admin
   
   * 进入/home/nos/目录，执行./start.sh
 ```shell
