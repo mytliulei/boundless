@@ -38,6 +38,24 @@ docker load -i dcnos_env.tart
 
   将x86模拟器的nos目录(不包括里面的img目录)拷贝到host本机内，如/home/test/下；将x86模拟器的nos目录下的img目录拷贝到host本机内，如/home/test/下
   
+```shell
+ll /home/test/nos/
+总用量 32
+drwxr-xr-x 3 root root 4096  3月 23 15:21 ./
+drwxr-xr-x 3 root root 4096  3月 23 13:26 ../
+-rw-r--r-- 1 root root   54  3月 23 15:06 devconfig
+drwxr-xr-x 2 root root 4096  3月 23 13:45 img/
+-rwxr-xr-x 1 root root 1372  3月 23 13:32 start.sh*
+-rwxr-xr-x 1 root root  467  3月 23 13:32 stop.sh*
+
+ll /home/test/img/
+总用量 87396
+drwxr-xr-x 2 root root     4096  3月 23 13:53 ./
+drwxr-xr-x 3 root root     4096  3月 23 13:27 ../
+-rwxr-xr-x 1 root root    17233  3月 23 13:30 dcn_console*
+-rwxr-xr-x 1 root root 89463353  3月 23 13:28 nosimg*
+```
+  
   x86模拟器下载： ftp://10.1.145.36/docker/dcnos.rar
   
   将start.sh,stop.sh,dcn_console，nosimg变为可执行文件
