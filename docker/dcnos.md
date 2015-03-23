@@ -2,7 +2,7 @@
 
   dcnos是DCN的网络操作系统，目前开发了x86模拟器，从而可以脱离物理交换机来运行平台的代码
    
-  这里提供一种方法来将x86模拟器的运行环境打包的docker中
+  这里提供一种方法来将x86模拟器的运行环境打包的docker中，x86模拟器的配置文件及nosimg存放在host本机上，使用volumes加载到容器中（即保存不同环境中的配置文件和共享nosimg），这样就实现了运行环境与数据的分离，避免频繁build docker images
  
   * [Dockerfile](./dockerfile/dcnos/Dockerfile) 
   
