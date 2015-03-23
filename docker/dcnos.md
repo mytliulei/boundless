@@ -26,8 +26,10 @@ docker pull mytliulei/dcnos_env:latest
 
 ftp://10.1.145.36/docker/img/dcnos_env.tar
 
-  下载后
+  下载后load
+  
 ```shell
+docker load -i dcnos_env.tart
 ```
 
 ##### 准备x86模拟器
@@ -51,6 +53,13 @@ ip netns exec $pid ip link set s1p1 up
 ##### 修改devconfig
   打开host本机的devconfig文件，位置在本机的nos目录下，里面是模拟器与端口的对用关系，devconfig文件中请去掉hostip这一行，添加port1 s1p1
   
+```shell
+cat devconfig
+devtype 302
+mac 00:03:0f:01:27:72
+port1 tp1
+```
+
   注意：如果启动多个容器来模拟多个设备时，要修改mac地址
   
 ##### 启动容器
@@ -71,4 +80,7 @@ docker exec s1 /etc/init.d/xinetd start
   * telnet到容器
   
   * 进入/home/nos/目录，执行./start.sh
-
+```shell
+cd /home/nos
+./start.sh
+```
