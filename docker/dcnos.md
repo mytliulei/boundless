@@ -36,6 +36,8 @@ docker load -i dcnos_env.tart
 
 ##### 准备x86模拟器
 
+  x86模拟器下载： ftp://10.1.145.36/docker/dcnos.rar
+
   将x86模拟器的nos目录(不包括里面的img目录)拷贝到host本机内，如/home/test/下；将x86模拟器的nos目录下的img目录拷贝到host本机内，如/home/test/下
   
 ```shell
@@ -56,13 +58,11 @@ drwxr-xr-x 3 root root     4096  3月 23 13:27 ../
 -rwxr-xr-x 1 root root 89463353  3月 23 13:28 nosimg*
 ```
   
-  x86模拟器下载： ftp://10.1.145.36/docker/dcnos.rar
-  
   将start.sh,stop.sh,dcn_console，nosimg变为可执行文件
   
 ```shell
 chmod +x /home/test/nos/*.sh
-chmod +x /home/test/nos/img/*
+chmod +x /home/test/img/*
 ```
 
 ##### 添加端口到容器
