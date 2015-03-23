@@ -108,10 +108,30 @@ docker exec s1 /etc/init.d/xinetd start
  ```
   * telnet到容器,用户名密码为admin:admin
   
-  * 进入/home/nos/目录，执行./start.sh
+  * 进入/home/nos/目录，执行./start.sh,即可启动x86模拟器,可以看到交换机的启动界面
 ```shell
-cd /home/nos
-./start.sh
+root@ff4bc4747181:/#cd /home/nos
+root@ff4bc4747181:/home/nos# ./start.sh 
+
+56 Ethernet/IEEE 802.3 interface(s)
+Current time is Mon Mar 23 07:20:02 2015 [UTC]
+
+ Series Switch Operating System
+Software Package Version 7.3.3.0(R0001.0099)
+Compiled Jan 30 16:12:28 2015
+
+%Mar 23 07:20:02 2015 Clock between master and slave has been synchronized!
+
+Mac Addr 00-03-0f-01-27-72
+
+Loading factory config ...
+web server is on
+%Mar 23 07:20:10 2015 %LINK-5-CHANGED: Interface Ethernet1/0/1, changed state to UP
+%Mar 23 07:20:10 2015 %LINEPROTO-5-UPDOWN: Line protocol on Interface Ethernet1/0/1, changed state to DOWN
+%Mar 23 07:20:10 2015 %LINK-5-CHANGED: Interface Ethernet1/0/2, changed state to UP
+%Mar 23 07:20:10 2015 %LINEPROTO-5-UPDOWN: Line protocol on Interface Ethernet1/0/2, changed state to DOWN
+%Mar 23 07:20:10 2015 %LINK-5-CHANGED: Interface Ethernet1/0/3, changed state to UP
+...
 ```
 
   这样在执行交脚本时,可以像使用ccm一样通过telnet打开console
