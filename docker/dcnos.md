@@ -97,6 +97,7 @@ docker run -d --name s1 -P -v /home/test/nos/:/home/nos/ -v /home/test/img/:/hom
 docker exec s1 /etc/init.d/xinetd start
 ```
 
+  **Note: 参数 -v 后面的内容是将host本机目录挂载到容器中,比如-v /home/test/nos/:/home/nos/,意思是将本机的/home/test/nos/目录下的内容挂载到容器的/home/nos/中,请按照本机nos及img的目录位置修改:(分号)前面的路径**
 
 ##### 启动x86模拟器
 
