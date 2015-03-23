@@ -113,3 +113,5 @@ docker exec s1 /etc/init.d/xinetd start
 cd /home/nos
 ./start.sh
 ```
+
+  这样在执行交脚本时,可以像使用ccm一样通过telnet打开console
