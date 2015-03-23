@@ -6,7 +6,7 @@ FROM ubuntu:14.04
 MAINTAINER Liu Lei <liuleic@digitalchina.com>
 
 RUN dpkg --add-architecture i386
-RUN apt-get update \
+RUN apt-get update \ 
     && apt-get install -y libc6:i386 \
     libncurses5:i386 \
     libstdc++6:i386 \
@@ -27,3 +27,4 @@ CMD ["/usr/sbin/sshd","-D"]
 RUN echo "root:123456" | chpasswd
 RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
