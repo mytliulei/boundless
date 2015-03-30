@@ -20,8 +20,8 @@
 
 ## 3. docker
   1. DCN
-    1. [发包工具](./docker/发包工具.md)
-    2. [dcnos](./docker/dcnos.md)
+    1. [发包工具](./docker/DCN/发包工具.md)
+    2. [dcnos](./docker/DCN/dcnos.md)
   2. [学习站点](./docker/学习站点.md)
 
 
