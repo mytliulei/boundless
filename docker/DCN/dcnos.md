@@ -80,7 +80,7 @@ port1 tp1
 ##### 启动容器
 
 ```shell
-docker run -d --name s1 -P -v /home/test/nos/:/home/nos/ -v /home/test/img/:/home/nos/img/ -privileged mytliulei/dcnos_env:latest
+docker run -d --name s1 -P -v /home/test/nos/:/home/nos/ -v /home/test/img/:/home/nos/img/ --privileged mytliulei/dcnos_env:latest
 docker exec s1 /etc/init.d/xinetd start
 ```
 
