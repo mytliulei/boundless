@@ -65,19 +65,6 @@ chmod +x /home/test/nos/*.sh
 chmod +x /home/test/img/*
 ```
 
-##### 添加端口到容器
-```shell
-pid=`docker inspect -f '{{.State.Pid}}' s1`
-ln -s /proc/$pid/ns/net /var/run/netns/$pid
-ip link set s1p1 netns $pid
-ip netns exec $pid sysctl -w net.ipv6.conf.s1p1.disable_ipv6=1
-ip netns exec $pid ip link set s1p1 up
-```
-
-  Note: s1p1的对端是tp1,设置方法见[发包工具](./发包工具.md)
-
-  这样将添加了s1p1到容器中
-  
 ##### 修改devconfig
   打开host本机的devconfig文件，位置在本机的nos目录下，里面是模拟器与端口的对用关系，devconfig文件中请去掉hostip这一行，添加port1 s1p1
   
@@ -98,6 +85,19 @@ docker exec s1 /etc/init.d/xinetd start
 ```
 
   **Note: 参数 -v 后面的内容是将host本机目录挂载到容器中,比如-v /home/test/nos/:/home/nos/,意思是将本机的/home/test/nos/目录下的内容挂载到容器的/home/nos/中,请按照本机nos及img的目录位置修改:(分号)前面的路径**
+
+##### 添加端口到容器
+```shell
+pid=`docker inspect -f '{{.State.Pid}}' s1`
+ln -s /proc/$pid/ns/net /var/run/netns/$pid
+ip link set s1p1 netns $pid
+ip netns exec $pid sysctl -w net.ipv6.conf.s1p1.disable_ipv6=1
+ip netns exec $pid ip link set s1p1 up
+```
+
+  Note: s1p1的对端是tp1,设置方法见[发包工具](./发包工具.md)
+
+  这样将添加了s1p1到容器中
 
 ##### 启动x86模拟器
 
