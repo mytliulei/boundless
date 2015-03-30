@@ -4,7 +4,7 @@
    
   这里提供一种方法来将x86模拟器的运行环境打包的docker中，x86模拟器的配置文件及nosimg存放在host本机上，使用volumes加载到容器中（即保存不同环境中的配置文件和共享nosimg），这样就实现了运行环境与数据的分离，避免频繁build docker images
  
-  * [Dockerfile](./dockerfile/dcnos/Dockerfile) 
+  * [Dockerfile](../dockerfile/dcnos/Dockerfile) 
   
   * [Docker img](https://registry.hub.docker.com/u/mytliulei/dcnos_env/)
 
