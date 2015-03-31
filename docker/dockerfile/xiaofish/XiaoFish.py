@@ -566,14 +566,14 @@ class XiaoFish(object):
         if num == 0:
             cap_hexstr = []
             for icap in self._capThreadDict[ifNum].xfcappacket:
-                cap_hexstr.append(hexstr(str(icap),0,1))
+                cap_hexstr.append(hexstr(str(icap),0,1).upper())
             return cap_hexstr
         else:
             if num <= self._capThreadDict[ifNum].xfcapnum:
                 cp = self._capThreadDict[ifNum].xfcappacket[num-1]
             else:
                 cp = self._capThreadDict[ifNum].xfcappacket[-1]
-            return hexstr(str(cp),0,1)
+            return [hexstr(str(cp),0,1).upper()]
 
     def get_capture_status(self,ifNum):
         '''return status
@@ -1291,7 +1291,15 @@ class XFServer(object):
         self.xf = None
         self.robot_handler = None
         self.rpyc_handler = None
-        os.system('iptables -F')
+        self._tag_rem = True
+
+    @property
+    def tag_rem(self):
+        return self._tag_rem
+    @tag_rem.setter
+    def tag_rem(self, value):
+        self._tag_rem = value
+    
 
     def runRobotServer(self):
         '''
@@ -1315,6 +1323,7 @@ class XFServer(object):
             self.runRobotServer()
         elif self.server_mode == '2':
             DsendService.xf = self.xf
+            DsendService.xf_tag_rem = self._tag_rem
             DsendService.init_ctrlStreamFlag(len(self.tester_portList))
             self.runRpycServer()
         else:
@@ -1326,6 +1335,7 @@ class DsendService(rpyc.Service):
     '''
     xf = None
     xf_ctrlStreamFlag = {}
+    xf_tag_rem = True
 
     @classmethod
     def init_ctrlStreamFlag(cls,portnum):
@@ -1393,13 +1403,19 @@ class DsendService(rpyc.Service):
                 if num >= int(requireNumber):
                     num = int(requireNumber)
                 bufferItem = DsendService.xf.get_capture_packet_hexstr(port)
-                hstrList = bufferItem[:num]
+                try:
+                    hstrList = bufferItem[:num]
+                except TypeError:
+                    hstrList = []
             elif args.find('pak') == 0:
                 requireNumber=args.replace('pak','')
                 if num >= int(requireNumber):
                     num = int(requireNumber)
                 bufferItem = DsendService.xf.get_capture_packet_hexstr(port)
-                hstrList = bufferItem[-num:]
+                try:
+                    hstrList = bufferItem[-num:]
+                except TypeError:
+                    hstrList = []
             else:
                 requireNumber = int(args)
                 hstrList = DsendService.xf.get_capture_packet_hexstr(port,requireNumber)
@@ -1474,8 +1490,11 @@ class DsendService(rpyc.Service):
         for name,value in args:
             if name == "stream":
                 streamValueTemp=str(value)
-                dot1q_re = re.compile("/Dot3Tag\\(vlan=%s,[^)]*\\)" % port)
-                streamValueTemp = dot1q_re.sub("",streamValueTemp,1)
+                if DsendService.xf_tag_rem:
+                    dot1q_re = re.compile("/Dot3Tag\\(vlan=%s,[^)]*\\)|/Dot1Q\\(vlan=%s,[^)]*\\)|/Dot3TagNoLen\\(vlan=%s,[^)]*\\)" % (port,port,port))
+                    streamValueTemp = dot1q_re.sub("",streamValueTemp,1)
+                    ether_type = re.compile("type=0x8100")
+                    streamValueTemp = ether_type.sub("",streamValueTemp,1)
                 payloadTemp = re.search("/\"payloadflag(.*)payloadflag\"",streamValueTemp)
                 replaceString = ''
                 if payloadTemp is not None:
@@ -1714,7 +1733,8 @@ if __name__ == '__main__':
     action = "start"
     host = '0.0.0.0'
     xfdetach = False
-    opts,args = getopt.getopt(sys.argv[1:],'hdp:m:i:t:o:',['help','detach','port=','iface=','mode=','action=','host='])
+    tagrem = True
+    opts,args = getopt.getopt(sys.argv[1:],'hdgp:m:i:t:o:',['help','detach','tag','port=','iface=','mode=','action=','host='])
     for opt,arg in opts:
         if opt in ("-h","--help"):
             usage()
@@ -1735,6 +1755,8 @@ if __name__ == '__main__':
             host = arg
         elif opt in ("-d","--detach"):
             xfdetach = True
+        elif opt in ("-g","--tag"):
+            tagrem = False
         else:
             pass
     #xf server instance
@@ -1742,6 +1764,8 @@ if __name__ == '__main__':
         usage()
         sys.exit(3)
     s = XFServer(bindport,server_mode,test_port,host)
+    if not tagrem:
+        s.tag_rem = False
     #detach the xiaofish
     daemon = daemonocle.Daemon(
         worker=s.runServer,detach=xfdetach,pidfile='/tmp/daemonocle_xiaofish.pid',
