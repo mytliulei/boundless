@@ -1,0 +1,27 @@
+name: vrrp
+line: 1 2 3 4 6 7
+
+switch sw1
+    port1 1
+    port2 5
+    port3 6
+    mac 00:03:0f:01:27:72
+    devtype 302
+switch sw2
+    port1 2
+    port2 5
+    port3 7
+    mac 00:03:0f:01:28:72
+    devtype 302
+switch sw3
+    port1 6 
+    port2 7
+    port3 3
+    port4 4
+    mac 00:03:0f:01:29:72
+    devtype 302
+tester xfd
+    port1 1
+    port2 2
+    port3 3
+    port4 4
