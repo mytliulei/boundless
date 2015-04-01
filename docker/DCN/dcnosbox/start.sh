@@ -4,6 +4,7 @@ taks_name="test"
 dcnoscfg_path="/home/test/dcnos"
 dcnos_version="7.3.3.0"
 docker_id="docker"
+env_cfg_file="docconfig"
 
 function linkContainer()
 {
@@ -47,7 +48,7 @@ if [$docker_dcnosenv_version != "latest"]; then
 fi
 
 #env name
-env_name=`cat docconfig | grep name | awk 'BEGIN {FS=":"} {print $2}'`
+env_name=`cat $env_cfg_file | grep name | awk 'BEGIN {FS=":"} {print $2}'`
 echo "##################################################################"
 echo "Now config the virtual test env of "$env_name
 
@@ -55,7 +56,7 @@ echo "Now config the virtual test env of "$env_name
 env_cfg_path=$dcnoscfg_path"/dev/"$taks_name"/"$env_name
 
 #start up dcnos docker container
-devlist=`cat docconfig | grep switch | awk '{print $2}'`
+devlist=`cat $env_cfg_file | grep switch | awk '{print $2}'`
 for devname in $devlist
 do
     echo "start dcnos docker" $devname
@@ -71,7 +72,7 @@ do
 done
 
 #start xf tester docker container
-xflist=`cat docconfig | grep tester | awk '{print $2}'`
+xflist=`cat $env_cfg_file | grep tester | awk '{print $2}'`
 for xf in $xflist
 do
     echo "start tester docker" $xf
@@ -83,7 +84,7 @@ done
 
 #creat veth interface
 env_veth=$taks_name$docker_id
-linelist=`cat docconfig | grep line | awk 'BEGIN {FS=":"} {print $2}'`
+linelist=`cat $env_cfg_file | grep line | awk 'BEGIN {FS=":"} {print $2}'`
 for line in $linelist
 do
     echo "make veth" $env_veth$line"-1" $env_veth$line"-2"
@@ -95,7 +96,7 @@ mkdir -p /var/run/netns
 
 #move vet interface to container
 mod="line"
-file=`cat docconfig`
+file=`cat $env_cfg_file`
 swflag=0
 testerflag=0
 for word in $file
@@ -158,7 +159,6 @@ do
 done
 
 #start xf tester daemon in docker
-#xflist=`cat docconfig | grep tester | awk '{print $2}'`
 for xf in $xflist
 do
     echo "start tester damon" $xf
@@ -168,7 +168,6 @@ do
 done
 
 #config devconfig,to run dcnos img in docker
-#devlist=`cat docconfig | grep switch | awk '{print $2}'`
 for devname in $devlist
 do
     echo "config dcnos devconfig" $devname
