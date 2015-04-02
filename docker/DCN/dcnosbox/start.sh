@@ -5,6 +5,7 @@ dcnoscfg_path="/home/test/dcnos"
 dcnos_version="7.3.3.0"
 docker_id="docker"
 env_cfg_file="docconfig"
+env_nosimg_path="./"
 
 function linkContainer()
 {
@@ -23,6 +24,26 @@ function linkContainer()
     ip netns exec $pid sysctl -w net.ipv6.conf.$2.disable_ipv6=1
     ip netns exec $pid ip link set $2 up
 }
+
+#check env_cfg_file clear.sh nosimg dcn_console file
+if [ ! -f "./clear.sh"]; then
+    echo "clear.sh not exists,please check"
+    exit 2
+fi
+if [ ! -f "./$env_cfg_file"]; then
+    echo "$env_cfg_file not exists,please check"
+    exit 2
+fi
+
+#check nosimg and dcn_console file exists in $env_nosimg_path
+if [ ! -f "$env_nosimg_path/nosimg"]; then
+    echo "$env_nosimg_path/nosimg not exists,please check"
+    exit 2
+fi
+if [ ! -f "$env_nosimg_path/dcn_console"]; then
+    echo "$env_nosimg_path/dcn_console,please check"
+    exit 2
+fi
 
 #pull docker container xfdsend and dcnos_env
 #docker_xfdsend_version=`docker images | grep mytliulei/xfdsend.*latest | awk '{print $2}'`
@@ -68,6 +89,13 @@ do
     if [ ! -f "$env_cfg_path/$devname/nos/start.sh"]; then
         docker exec $env_devdocker cp /home/start.sh /home/nos/start.sh
         docker exec $env_devdocker cp /home/stop.sh /home/nos/stop.sh
+    fi
+    if [ ! -f "$dcnoscfg_path/img/$dcnos_version/img/nosimg"]; then
+        cp $env_nosimg_path/nosimg $dcnoscfg_path/img/$dcnos_version/img/nosimg
+        cp $env_nosimg_path/dcn_console $dcnoscfg_path/img/$dcnos_version/img/dcn_console
+        chmod +x $dcnoscfg_path/img/$dcnos_version/img/nosimg
+        chmod +x $dcnoscfg_path/img/$dcnos_version/img/dcn_console
+    fi
     swarray[$devname"port"]=""
 done
 
@@ -177,6 +205,7 @@ do
     do
         wstr=${stri//;/ }
         echo $wstr >> $env_cfg_path/$devname/nos/devconfig
+    done
 done
 
 #print dev telnet address and xf rypc address
