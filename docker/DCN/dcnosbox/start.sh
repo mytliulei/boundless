@@ -26,21 +26,21 @@ function linkContainer()
 }
 
 #check env_cfg_file clear.sh nosimg dcn_console file
-if [ ! -f "./clear.sh"]; then
+if [ ! -f "./clear.sh" ]; then
     echo "clear.sh not exists,please check"
     exit 2
 fi
-if [ ! -f "./$env_cfg_file"]; then
+if [ ! -f "./$env_cfg_file" ]; then
     echo "$env_cfg_file not exists,please check"
     exit 2
 fi
 
 #check nosimg and dcn_console file exists in $env_nosimg_path
-if [ ! -f "$env_nosimg_path/nosimg"]; then
+if [ ! -f "$env_nosimg_path/nosimg" ]; then
     echo "$env_nosimg_path/nosimg not exists,please check"
     exit 2
 fi
-if [ ! -f "$env_nosimg_path/dcn_console"]; then
+if [ ! -f "$env_nosimg_path/dcn_console" ]; then
     echo "$env_nosimg_path/dcn_console,please check"
     exit 2
 fi
@@ -48,10 +48,10 @@ fi
 #pull docker container xfdsend and dcnos_env
 #docker_xfdsend_version=`docker images | grep mytliulei/xfdsend.*latest | awk '{print $2}'`
 docker_xfdsend_version="test"
-if [$docker_xfdsend_version != "latest"]; then
+if [ $docker_xfdsend_version != "latest" ]; then
     docker pull mytliulei/xfdsend:latest
     ret=$?
-    if [$ret -ne 0]; then
+    if [ $ret -ne 0 ]; then
         echo "command error: docker not installed or not connect docker hub,please check"
         exit 1
     fi
@@ -59,10 +59,10 @@ fi
 
 #docker_dcnosenv_version=`docker images | grep mytliulei/dcnos_env.*latest | awk '{print $2}'`
 docker_dcnosenv_version="test"
-if [$docker_dcnosenv_version != "latest"]; then
+if [ $docker_dcnosenv_version != "latest" ]; then
     docker pull mytliulei/dcnos_env:latest
     ret=$?
-    if [$ret -ne 0]; then
+    if [ $ret -ne 0 ]; then
         echo "command error: docker not installed or not connect docker hub,please check"
         exit 1
     fi
@@ -70,33 +70,40 @@ fi
 
 #env name
 env_name=`cat $env_cfg_file | grep name | awk 'BEGIN {FS=":"} {print $2}'`
+env_name=${env_name// /}
 echo "##################################################################"
 echo "Now config the virtual test env of "$env_name
 
 #config path dev config
-env_cfg_path=$dcnoscfg_path"/dev/"$taks_name"/"$env_name
+env_cfg_path="$dcnoscfg_path/dev/$taks_name/$env_name"
 
 #start up dcnos docker container
 devlist=`cat $env_cfg_file | grep switch | awk '{print $2}'`
+idevnum=1
 for devname in $devlist
 do
     echo "start dcnos docker" $devname
     mkdir -p $env_cfg_path/$devname/nos/
     mkdir -p $dcnoscfg_path/img/$dcnos_version/img/
-    env_devdocker=$taks_name$docker_id$env_name$devname
+    env_devdocker=${taks_name}${docker_id}${env_name}${devname}
     docker run -d --name $env_devdocker -P -v $env_cfg_path/$devname/nos/:/home/nos/ -v $dcnoscfg_path/img/$dcnos_version/img/:/home/nos/img/ --privileged mytliulei/dcnos_env:latest
     docker exec $env_devdocker /etc/init.d/xinetd start
-    if [ ! -f "$env_cfg_path/$devname/nos/start.sh"]; then
+    if [ ! -f "$env_cfg_path/$devname/nos/start.sh" ]; then
         docker exec $env_devdocker cp /home/start.sh /home/nos/start.sh
         docker exec $env_devdocker cp /home/stop.sh /home/nos/stop.sh
     fi
-    if [ ! -f "$dcnoscfg_path/img/$dcnos_version/img/nosimg"]; then
+    if [ ! -f "$dcnoscfg_path/img/$dcnos_version/img/nosimg" ]; then
         cp $env_nosimg_path/nosimg $dcnoscfg_path/img/$dcnos_version/img/nosimg
         cp $env_nosimg_path/dcn_console $dcnoscfg_path/img/$dcnos_version/img/dcn_console
         chmod +x $dcnoscfg_path/img/$dcnos_version/img/nosimg
         chmod +x $dcnoscfg_path/img/$dcnos_version/img/dcn_console
     fi
-    swarray[$devname"port"]=""
+    swarray[$idevnum]=""
+    ((idevnum++))
+    swarray[$idevnum]=""
+    ((idevnum++))
+    swarray[$idevnum]=""
+    ((idevnum++))
 done
 
 #start xf tester docker container
@@ -111,12 +118,12 @@ done
 
 
 #creat veth interface
-env_veth=$taks_name$docker_id
+env_veth=$docker_id
 linelist=`cat $env_cfg_file | grep line | awk 'BEGIN {FS=":"} {print $2}'`
 for line in $linelist
 do
     echo "make veth" $env_veth$line"-1" $env_veth$line"-2"
-    ip link add "veth"$env_veth$line"-1" type veth peer name "veth"$env_veth$line"-2"
+    ip link add $env_veth$line"-1" type veth peer name $env_veth$line"-2"
     linearray[$line]=2
 done
 
@@ -131,22 +138,21 @@ for word in $file
 do
     if [ $word == "switch" ]; then
         mod="switch"
-        swflag=1
+        ((swflag++))
         testerflag=0
         continue
-    elif [$word == "tester"]; then
+    elif [ $word == "tester" ]; then
         mod="tester"
-        swflag=0
         testerflag=1
         continue
     elif [[ $word =~ "port"[0-9] ]]; then
         mod="port"
         seq=`echo $word | awk 'BEGIN {FS="[^0-9]+"} {print $2}'`
         continue
-    elif [$word == "mac"]; then
+    elif [ $word == "mac" ]; then
         mod="mac"
         continue
-    elif [$word == "devtype"]; then
+    elif [ $word == "devtype" ]; then
         mod="devtype"
         continue
     fi
@@ -157,6 +163,16 @@ do
     elif [ $mod == "tester" ]; then
         devname=$word
         continue
+    elif [ $mod == "mac" ]; then
+        if [ $swflag -ne 0 ]; then
+            let macindex=swflag*3-1
+            swarray[$macindex]=$word
+        fi
+    elif [ $mod == "devtype" ]; then
+        if [ $swflag -ne 0 ]; then
+            let typeindex=swflag*3-2
+            swarray[$typeindex]=$word
+        fi
     elif [ $mod == "port" ]; then
         linenum=$word
         vethnum=${linearray[$linenum]}
@@ -167,23 +183,18 @@ do
             exit 3
         fi
 
-        echo "move veth"$env_veth$linenum"-"$vethnum "to switch" $devname "as eth"$seq
+        echo "move "$env_veth$linenum"-"$vethnum "to switch" $devname "as eth"$seq
         env_devdocker=$taks_name$docker_id$env_name$devname
-        linkContainer $env_devdocker "eth"$seq "veth"$env_veth$linenum"-"$vethnum
+        linkContainer $env_devdocker "eth"$seq $env_veth$linenum"-"$vethnum
         linearray[$linenum]=$[${linearray[$linenum]} - 1]
         if [ $testerflag -eq 1 ]; then
             xfarray[$devname]+="eth"$seq","
+            continue
         fi
-        if [ $swflag -eq 1 ]; then
-            swarray[$devname"port"]+="port"$seq";eth"$seq" "
-        fi
-    elif [ $mod == "mac" ]; then
-        if [ $swflag -eq 1 ]; then
-            swarray[$devname$mod]=$word
-        fi
-    elif [ $mod == "devtype" ]; then
-        if [ $swflag -eq 1 ]; then
-            swarray[$devname$mod]=$word
+        if [ $swflag -ne 0 ]; then
+            let portindex=swflag*3
+            swarray[$portindex]+="port$seq;eth$seq "
+            continue
         fi
     fi
 
@@ -195,20 +206,28 @@ do
     echo "start tester damon" $xf
     env_xfdocker=$taks_name$docker_id$env_name$xf
     xfiface=${xfarray[$xf]}
+    echo "start XiaoFish -d -m 1 -i ${xfiface:0:end-1}"
     docker exec $env_xfdocker python /home/XiaoFish.py -d -m 1 -i ${xfiface:0:end-1}
 done
 
 #config devconfig,to run dcnos img in docker
+idevnum=1
 for devname in $devlist
 do
     echo "config dcnos devconfig" $devname
-    echo "devtype" ${swarray[$devname"devtype"]} > $env_cfg_path/$devname/nos/devconfig
-    echo "mac" ${swarray[$devname"mac"]} >> $env_cfg_path/$devname/nos/devconfig
-    for stri in ${swarray[$devname"port"]}
+    echo "devtype" ${swarray[$idevnum]}
+    echo "devtype" ${swarray[$idevnum]} > $env_cfg_path/$devname/nos/devconfig
+    ((idevnum++))
+    echo "mac" ${swarray[$idevnum]}
+    echo "mac" ${swarray[$idevnum]} >> $env_cfg_path/$devname/nos/devconfig
+    ((idevnum++))
+    for stri in ${swarray[$idevnum]}
     do
         wstr=${stri//;/ }
+        echo $wstr
         echo $wstr >> $env_cfg_path/$devname/nos/devconfig
     done
+    ((idevnum++))
 done
 
 #print dev telnet address and xf rypc address
@@ -219,6 +238,8 @@ echo ""
 echo ""
 echo ""
 echo "##################################################################"
+echo "##################################################################"
+echo "##################################################################"
 for devname in $devlist
 do
     env_devdocker=$taks_name$docker_id$env_name$devname
@@ -226,18 +247,27 @@ do
     echo "--------------------------------------------------------------"
     echo "you can login "$devname" by telnet "$t_ip":"$t_port" on moni or Dauto"
     echo "username/password is admin:admin"
+    echo ""
     echo "and type 'cd /home/nos'"
+    echo ""
     echo "and type './start.sh' to run dcnos"
+    echo ""
     echo "then you can get the switch console"
+    echo "--------------------------------------------------------------"
 done
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "##################################################################"
 for xf in $xflist
 do
     env_xfdocker=$taks_name$docker_id$env_name$xf
     t_port=`docker port $env_xfdocker | grep 11918 | awk 'BEGIN {FS=":"} {print $2}'`
     echo "--------------------------------------------------------------"
     echo "you can control tester "$devname" by "$t_ip":"$t_port
+    echo ""
     echo "if running moni script,you can config the "$t_ip":"$t_port" in DsendConfig.py"
+    echo ""
     echo "if running python script,you can config "$t_ip" in xxx_config_topu.py,"
+    echo ""
     echo "and config ConnectDsend(ip,port="$t_port") in xxx_initial.py or xxx_main.py"
+    echo "--------------------------------------------------------------"
 done
+echo "##################################################################"

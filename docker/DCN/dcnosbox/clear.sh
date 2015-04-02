@@ -3,7 +3,7 @@
 taks_name="test"
 docker_id="docker"
 env_name=`cat docconfig | grep name | awk 'BEGIN {FS=":"} {print $2}'`
-
+env_name=${env_name// /}
 devlist=`cat docconfig | grep switch | awk '{print $2}'`
 for devname in $devlist
 do
