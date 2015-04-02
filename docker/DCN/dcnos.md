@@ -26,7 +26,7 @@ docker pull mytliulei/dcnos_env:latest
 
   * 从内网ftp下载
 
-ftp://10.1.145.36/docker/img/dcnos_env.tar
+ftp://10.1.145.36/docker/dockerimg/dcnos_env.tar
 
   下载后load
   
