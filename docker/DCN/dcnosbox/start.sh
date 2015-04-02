@@ -267,7 +267,7 @@ do
     echo ""
     echo "if running python script,you can config "$t_ip" in xxx_config_topu.py,"
     echo ""
-    echo "and config ConnectDsend(ip,port="$t_port") in xxx_initial.py or xxx_main.py"
+    echo "and config ConnectDsend(ip,port='$t_port') in xxx_initial.py or xxx_main.py"
     echo "--------------------------------------------------------------"
 done
 echo "##################################################################"
