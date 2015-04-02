@@ -161,7 +161,10 @@ do
         linenum=$word
         vethnum=${linearray[$linenum]}
         if [ $vethnum -eq 0 ]; then
-            echo "error on line" $linenum
+            echo "error on line" $linenum $devname
+            echo "run clear.sh to clear the docker container"
+            ./clear.sh
+            exit 3
         fi
 
         echo "move veth"$env_veth$linenum"-"$vethnum "to switch" $devname "as eth"$seq
