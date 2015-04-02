@@ -207,7 +207,7 @@ do
     env_xfdocker=$taks_name$docker_id$env_name$xf
     xfiface=${xfarray[$xf]}
     echo "start XiaoFish -d -m 1 -i ${xfiface:0:end-1}"
-    docker exec $env_xfdocker python /home/XiaoFish.py -d -m 1 -i ${xfiface:0:end-1}
+    docker exec $env_xfdocker python /home/XiaoFish.py -d -m 2 -i ${xfiface:0:end-1}
 done
 
 #config devconfig,to run dcnos img in docker
