@@ -49,6 +49,8 @@ fi
 #docker_xfdsend_version=`docker images | grep mytliulei/xfdsend.*latest | awk '{print $2}'`
 docker_xfdsend_version="test"
 if [ $docker_xfdsend_version != "latest" ]; then
+    echo "##################################################################"
+    echo "pull docker img xfdsend from docker hub server"
     docker pull mytliulei/xfdsend:latest
     ret=$?
     if [ $ret -ne 0 ]; then
@@ -60,6 +62,8 @@ fi
 #docker_dcnosenv_version=`docker images | grep mytliulei/dcnos_env.*latest | awk '{print $2}'`
 docker_dcnosenv_version="test"
 if [ $docker_dcnosenv_version != "latest" ]; then
+    echo "##################################################################"
+    echo "pull docker img dcnos_env from docker hub server"
     docker pull mytliulei/dcnos_env:latest
     ret=$?
     if [ $ret -ne 0 ]; then
@@ -80,8 +84,14 @@ env_cfg_path="$dcnoscfg_path/dev/$taks_name/$env_name"
 #start up dcnos docker container
 devlist=`cat $env_cfg_file | grep switch | awk '{print $2}'`
 idevnum=1
+swarray_num=3
+swarray_porti=0
+swarray_maci=1
+swarray_devtypei=2
+
 for devname in $devlist
 do
+    echo "--------------------------------------------------------------"
     echo "start dcnos docker" $devname
     mkdir -p $env_cfg_path/$devname/nos/
     mkdir -p $dcnoscfg_path/img/$dcnos_version/img/
@@ -98,26 +108,38 @@ do
         chmod +x $dcnoscfg_path/img/$dcnos_version/img/nosimg
         chmod +x $dcnoscfg_path/img/$dcnos_version/img/dcn_console
     fi
-    swarray[$idevnum]=""
-    ((idevnum++))
-    swarray[$idevnum]=""
-    ((idevnum++))
-    swarray[$idevnum]=""
-    ((idevnum++))
+    for i in $(seq $swarray_num)
+    do
+
+        swarray[$idevnum]=""
+        ((idevnum++))
+    done
 done
 
 #start xf tester docker container
 xflist=`cat $env_cfg_file | grep tester | awk '{print $2}'`
+ixfnum=1
+xfarray_num=1
+xfarray_porti=0
 for xf in $xflist
 do
+    echo "--------------------------------------------------------------"
     echo "start tester docker" $xf
     env_xfdocker=$taks_name$docker_id$env_name$xf
     docker run -t -i -P -d --name $env_xfdocker mytliulei/xfdsend:latest /bin/bash
-    xfarray[$xf]=""
+    #xfarray[$xf]=""
+    for i in $(seq $xfarray_num)
+    do
+
+        xfarray[$ixfnum]=""
+        ((ixfnum++))
+    done
 done
 
 
 #creat veth interface
+echo "------------------------------------------------------------------"
+echo "make connection between devices using veth"
 env_veth=$docker_id
 linelist=`cat $env_cfg_file | grep line | awk 'BEGIN {FS=":"} {print $2}'`
 for line in $linelist
@@ -133,17 +155,22 @@ mkdir -p /var/run/netns
 mod="line"
 file=`cat $env_cfg_file`
 swflag=0
+swincr=0
 testerflag=0
+testerincr=0
 for word in $file
 do
     if [ $word == "switch" ]; then
         mod="switch"
-        ((swflag++))
+        swflag=1
+        ((swincr++))
         testerflag=0
         continue
     elif [ $word == "tester" ]; then
         mod="tester"
+        swflag=0
         testerflag=1
+        ((testerincr++))
         continue
     elif [[ $word =~ "port"[0-9] ]]; then
         mod="port"
@@ -164,13 +191,13 @@ do
         devname=$word
         continue
     elif [ $mod == "mac" ]; then
-        if [ $swflag -ne 0 ]; then
-            let macindex=swflag*3-1
+        if [ $swflag -eq 1 ]; then
+            let macindex=swincr*swarray_num-swarray_maci
             swarray[$macindex]=$word
         fi
     elif [ $mod == "devtype" ]; then
-        if [ $swflag -ne 0 ]; then
-            let typeindex=swflag*3-2
+        if [ $swflag -eq 1 ]; then
+            let typeindex=swincr*swarray_num-swarray_devtypei
             swarray[$typeindex]=$word
         fi
     elif [ $mod == "port" ]; then
@@ -188,11 +215,12 @@ do
         linkContainer $env_devdocker "eth"$seq $env_veth$linenum"-"$vethnum
         linearray[$linenum]=$[${linearray[$linenum]} - 1]
         if [ $testerflag -eq 1 ]; then
-            xfarray[$devname]+="eth"$seq","
+            let xfportindex=testerincr*xfarray_num-xfarray_porti
+            xfarray[$xfportindex]+="eth"$seq","
             continue
         fi
-        if [ $swflag -ne 0 ]; then
-            let portindex=swflag*3
+        if [ $swflag -eq 1 ]; then
+            let portindex=swincr*swarray_num-swarray_porti
             swarray[$portindex]+="port$seq;eth$seq "
             continue
         fi
@@ -201,26 +229,39 @@ do
 done
 
 #start xf tester daemon in docker
+ixfnum=1
 for xf in $xflist
 do
+    ixfnx=$xfarray_num
+    echo "------------------------------------------------------------------"
     echo "start tester damon" $xf
     env_xfdocker=$taks_name$docker_id$env_name$xf
-    xfiface=${xfarray[$xf]}
+    xfiface=${xfarray[$ixfnum]}
+    ((ixfnum++))
+    ((ixfnx--))
     echo "start XiaoFish -d -m 1 -i ${xfiface:0:end-1}"
     docker exec $env_xfdocker python /home/XiaoFish.py -d -m 2 -i ${xfiface:0:end-1}
+    for i in $(seq $ixfnx)
+    do
+        ((ixfnum++))
+    done
 done
 
 #config devconfig,to run dcnos img in docker
 idevnum=1
 for devname in $devlist
 do
+    iswnum=$swarray_num
+    echo "------------------------------------------------------------------"
     echo "config dcnos devconfig" $devname
     echo "devtype" ${swarray[$idevnum]}
     echo "devtype" ${swarray[$idevnum]} > $env_cfg_path/$devname/nos/devconfig
     ((idevnum++))
+    ((iswnum--))
     echo "mac" ${swarray[$idevnum]}
     echo "mac" ${swarray[$idevnum]} >> $env_cfg_path/$devname/nos/devconfig
     ((idevnum++))
+    ((iswnum--))
     for stri in ${swarray[$idevnum]}
     do
         wstr=${stri//;/ }
@@ -228,6 +269,11 @@ do
         echo $wstr >> $env_cfg_path/$devname/nos/devconfig
     done
     ((idevnum++))
+    ((iswnum--))
+    for i in $(seq $iswnum)
+    do
+        ((idevnum++))
+    done
 done
 
 #print dev telnet address and xf rypc address
@@ -235,10 +281,8 @@ t_eth=`ip route | grep default | awk '{print $5}'`
 t_ipmask=`ip addr show $t_eth | grep "inet " | awk '{print $2}'`
 t_ip=`echo $t_ipmask | cut -d "/" -f1`
 echo ""
-echo ""
-echo ""
 echo "##################################################################"
-echo "##################################################################"
+echo "$env_name test env is completed"
 echo "##################################################################"
 for devname in $devlist
 do
@@ -246,6 +290,7 @@ do
     t_port=`docker port $env_devdocker | grep 23 | awk 'BEGIN {FS=":"} {print $2}'`
     echo "--------------------------------------------------------------"
     echo "you can login "$devname" by telnet "$t_ip":"$t_port" on moni or Dauto"
+    echo ""
     echo "username/password is admin:admin"
     echo ""
     echo "and type 'cd /home/nos'"
@@ -261,7 +306,7 @@ do
     env_xfdocker=$taks_name$docker_id$env_name$xf
     t_port=`docker port $env_xfdocker | grep 11918 | awk 'BEGIN {FS=":"} {print $2}'`
     echo "--------------------------------------------------------------"
-    echo "you can control tester "$devname" by "$t_ip":"$t_port
+    echo "you can control tester "$xf" by "$t_ip":"$t_port
     echo ""
     echo "if running moni script,you can config the "$t_ip":"$t_port" in DsendConfig.py"
     echo ""
