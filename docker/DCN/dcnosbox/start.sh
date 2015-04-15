@@ -6,6 +6,7 @@ dcnos_version="7.3.3.0"
 docker_id="docker"
 env_cfg_file="docconfig"
 env_nosimg_path="./"
+env_registry_address="192.168.30.144:5000"
 
 function linkContainer()
 {
@@ -50,8 +51,8 @@ fi
 docker_xfdsend_version="test"
 if [ $docker_xfdsend_version != "latest" ]; then
     echo "##################################################################"
-    echo "pull docker img xfdsend from docker hub server"
-    docker pull mytliulei/xfdsend:latest
+    echo "pull docker img xfdsend from docker registry $env_registry_address"
+    docker pull $env_registry_address/xfdsend:latest
     ret=$?
     if [ $ret -ne 0 ]; then
         echo "command error: docker not installed or not connect docker hub,please check"
@@ -63,8 +64,8 @@ fi
 docker_dcnosenv_version="test"
 if [ $docker_dcnosenv_version != "latest" ]; then
     echo "##################################################################"
-    echo "pull docker img dcnos_env from docker hub server"
-    docker pull mytliulei/dcnos_env:latest
+    echo "pull docker img dcnos_env from docker registry $env_registry_address"
+    docker pull $env_registry_address/dcnos_env:latest
     ret=$?
     if [ $ret -ne 0 ]; then
         echo "command error: docker not installed or not connect docker hub,please check"
@@ -96,7 +97,7 @@ do
     mkdir -p $env_cfg_path/$devname/nos/
     mkdir -p $dcnoscfg_path/img/$dcnos_version/img/
     env_devdocker=${taks_name}${docker_id}${env_name}${devname}
-    docker run -d --name $env_devdocker -P -v $env_cfg_path/$devname/nos/:/home/nos/ -v $dcnoscfg_path/img/$dcnos_version/img/:/home/nos/img/ --privileged mytliulei/dcnos_env:latest
+    docker run -d --name $env_devdocker -P -v $env_cfg_path/$devname/nos/:/home/nos/ -v $dcnoscfg_path/img/$dcnos_version/img/:/home/nos/img/ --privileged $env_registry_address/dcnos_env:latest
     docker exec $env_devdocker /etc/init.d/xinetd start
     if [ ! -f "$env_cfg_path/$devname/nos/start.sh" ]; then
         docker exec $env_devdocker cp /home/start.sh /home/nos/start.sh
@@ -126,7 +127,7 @@ do
     echo "--------------------------------------------------------------"
     echo "start tester docker" $xf
     env_xfdocker=$taks_name$docker_id$env_name$xf
-    docker run -t -i -P -d --name $env_xfdocker mytliulei/xfdsend:latest /bin/bash
+    docker run -t -i -P -d --name $env_xfdocker $env_registry_address/xfdsend:latest /bin/bash
     #xfarray[$xf]=""
     for i in $(seq $xfarray_num)
     do
