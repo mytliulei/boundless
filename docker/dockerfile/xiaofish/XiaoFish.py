@@ -1515,9 +1515,9 @@ class DsendService(rpyc.Service):
             elif name == "mode":
                 mode = value
             elif name == "streamMode":
-                streamMode = value
+                streamMode = value.replace('\'','')
             elif name == "streamSize":
-                streamSize = value
+                streamSize = value.replace('\'','')
             elif name == "lastStreamFlag":
                 lastStreamFlag = int(value)
             elif name == "count":

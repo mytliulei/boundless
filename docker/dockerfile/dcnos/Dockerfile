@@ -27,4 +27,7 @@ CMD ["/usr/sbin/sshd","-D"]
 RUN echo "root:123456" | chpasswd
 RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-
+COPY ./start.sh /home/
+COPY ./stop.sh /home/
+RUN chmod +x /home/start.sh
+RUN chmod +x /home/stop.sh
