@@ -6,7 +6,7 @@ dcnos_version="7.3.3.0"
 docker_id="docker"
 env_cfg_file="docconfig"
 env_nosimg_path="./"
-env_registry_address="192.168.30.144:5000"
+env_registry_address="192.168.30.144:8080"
 
 function linkContainer()
 {
