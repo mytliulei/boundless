@@ -1,6 +1,6 @@
 # boundless
 
-**部分技术文档来源网络，如有侵权，请联系mytliulei@gmail.com**
+**部分文档来源网络，如有侵权，请联系mytliulei@gmail.com**
 
 技术文档内容包含：
 
@@ -26,6 +26,7 @@
     2. [dcnos](./docker/DCN/dcnos.md)
     3. [测试组网环境](./docker/DCN/测试组网环境.md)
   2. [学习站点](./docker/学习站点.md)
+  3. [搭建私有仓库](./docker/搭建私有仓库.md)
 
 ## 4. robotframework
   1. [学习站点](./robotframework/学习站点.md)
