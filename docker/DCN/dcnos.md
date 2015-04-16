@@ -27,7 +27,7 @@ docker pull mytliulei/dcnos_env:latest
   * 内网docker registry下载
 
 ```shell
-docker pull 192.168.30.144:5000/dcnos_env:latest
+docker pull 192.168.30.144:8080/dcnos_env:latest
 ```
 
   * 内网ftp下载
@@ -86,7 +86,7 @@ port1 tp1
 ##### 启动容器
 
 ```shell
-docker run -d --name s1 -P -v /home/test/nos/:/home/nos/ -v /home/test/img/:/home/nos/img/ --privileged mytliulei/dcnos_env:latest
+docker run -d --name s1 -P -v /home/test/nos/:/home/nos/ -v /home/test/img/:/home/nos/img/ --privileged 192.168.30.144:8080/dcnos_env:latest
 docker exec s1 /etc/init.d/xinetd start
 ```
 
