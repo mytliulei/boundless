@@ -247,6 +247,7 @@ devices    kcore        mpt         sys
 diskstats  keys         mtrr        sysrq-trigger
 ```
   下图，我们也可以看到在子进程中的top命令只看得到两个进程了。
+  
   ![Image of top](./docimg/ns1.mount.namespace.jpg)
 
   这里，多说一下。在通过CLONE_NEWNS创建mount namespace后，父进程会把自己的文件结构复制给子进程中。而子进程中新的namespace中的所有mount操作都只影响自身的文件系统，而不对外界产生任何影响。这样可以做到比较严格地隔离。
