@@ -358,4 +358,5 @@ cpuset cpu cpuacct memory devices freezer net_cls blkio perf_event net_prio huge
   * 任何被配置过subtree_control的目录都不能绑定进程，根结点除外。所以，A,C,D,E可以绑上进程，但是B不行。
 我们可以看到，这种方式干净的区分开了两个事，一个是进程的分组，一个是对分组的资源控制（以前这两个事完全混在一起），在目录继承上增加了些限制，这样可以避免一些模棱两可的情况。
 
-  当然，这个事还在演化中，cgroup的这些问题这个事目前由cgroup的吐槽人Tejun Heo和华为的Li Zefan同学负责解决中。总之，这是一个系统管理上的问题，而且改变会影响很多东西，但一旦方案确定，老的cgroup方式将一去不复返。
+
+当然，这个事还在演化中，cgroup的这些问题这个事目前由cgroup的吐槽人Tejun Heo和华为的Li Zefan同学负责解决中。总之，这是一个系统管理上的问题，而且改变会影响很多东西，但一旦方案确定，老的cgroup方式将一去不复返。
