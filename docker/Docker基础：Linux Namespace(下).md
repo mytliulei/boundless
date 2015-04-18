@@ -1,4 +1,4 @@
-  转载自[coolshell](http://coolshell.cn/),作者陈皓
+  转载自[coolshell](http://coolshell.cn/),作者[陈皓](http://coolshell.cn/haoel)
 
   原文:http://coolshell.cn/articles/17010.html  
   
