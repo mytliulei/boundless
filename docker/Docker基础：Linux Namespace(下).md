@@ -1,6 +1,6 @@
   转载自[coolshell](http://coolshell.cn/),作者[陈皓](http://coolshell.cn/haoel)
 
-  原文:http://coolshell.cn/articles/17010.html  
+  原文:http://coolshell.cn/articles/17029.html
   
   在 [Docker基础：Linux Namespace（上）](./Docker基础：Linux Namespace(下).md)中我们了解了，UTD、IPC、PID、Mount 四个namespace，我们模仿Docker做了一个相当相当山寨的镜像。在这一篇中，主要想向大家介绍Linux的User和Network的Namespace。
 
