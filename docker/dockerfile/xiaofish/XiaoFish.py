@@ -1490,7 +1490,7 @@ class DsendService(rpyc.Service):
         for name,value in args:
             if name == "stream":
                 streamValueTemp=str(value)
-                if DsendService.xf_tag_rem:
+                if False and DsendService.xf_tag_rem:
                     dot1q_re = re.compile("/Dot3Tag\\(vlan=%s,[^)]*\\)|/Dot1Q\\(vlan=%s,[^)]*\\)|/Dot3TagNoLen\\(vlan=%s,[^)]*\\)" % (port,port,port))
                     streamValueTemp = dot1q_re.sub("",streamValueTemp,1)
                     ether_type = re.compile("type=0x8100")
@@ -1565,7 +1565,7 @@ class DsendService(rpyc.Service):
             exec(k[0]+'='+'resList')
         #add payload according streamsize
         streamValue = eval(streamValueTemp)
-        streamLen=len(streamValue)
+        streamLen=len(streamValue) - 4
         load = replaceString
         for p in range(0,int(streamSize)-streamLen-len(replaceString) - 4):
             load +='\x00'
@@ -1602,6 +1602,21 @@ class DsendService(rpyc.Service):
                 xf_mode = 2
             else:
                 xf_mode = 1
+        c_stream = []
+        if DsendService.xf_tag_rem:
+            for istream in stream:
+                ipktstr = hexstr(str(istream),0,1)
+                cpktstr = ipktstr[:36]+ipktstr[48:]
+                cpktstr = ''.join(cpktstr.split())
+                cpkthexlist = [chr(int(cpktstr[i:i+2],16)) for i in range(0,len(cpktstr)-1,2)]
+                cpkthex = ''.join(cpkthexlist)
+                try:
+                    cpkt = Ether(cpkthex)
+                except Exception,ex:
+                    raise AssertionError("can not convert %s to Packet on iface %s" % (cpktstr,port))
+                c_stream.append(cpkt)
+        if c_stream:
+            stream = c_stream
         DsendService.xf.set_stream_from_dsend(port,stream,str(sindex))
         if xf_mode == 3:
             DsendService.xf.set_stream_control(port,str(sindex),xf_rate,1,xf_mode,xf_count,1)
