@@ -109,6 +109,9 @@ do
         chmod +x $dcnoscfg_path/img/$dcnos_version/img/nosimg
         chmod +x $dcnoscfg_path/img/$dcnos_version/img/dcn_console
     fi
+    if [ -f "$env_cfg_path/$devname/nos/startup.cfg" ]; then
+        docker exec $env_devdocker rm -f /home/nos/startup.cfg
+    fi
     for i in $(seq $swarray_num)
     do
 
