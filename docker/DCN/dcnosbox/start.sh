@@ -7,6 +7,8 @@ docker_id="docker"
 env_cfg_file="docconfig"
 env_nosimg_path="./"
 env_registry_address="192.168.30.144:8080"
+idevconsole_port=10001
+ixfrpc_port=11918
 
 function linkContainer()
 {
@@ -38,12 +40,16 @@ fi
 
 #check nosimg and dcn_console file exists in $env_nosimg_path
 if [ ! -f "$env_nosimg_path/nosimg" ]; then
-    echo "$env_nosimg_path/nosimg not exists,please check"
-    exit 2
+    if [ ! -f "$dcnoscfg_path/img/$dcnos_version/img/nosimg" ]; then
+        echo "$env_nosimg_path/nosimg not exists,please check"
+        exit 2
+    fi
 fi
 if [ ! -f "$env_nosimg_path/dcn_console" ]; then
-    echo "$env_nosimg_path/dcn_console,please check"
-    exit 2
+    if [ ! -f "$dcnoscfg_path/img/$dcnos_version/img/dcn_console" ]; then
+        echo "$env_nosimg_path/dcn_console,please check"
+        exit 2
+    fi
 fi
 
 #pull docker container xfdsend and dcnos_env
@@ -90,6 +96,7 @@ swarray_porti=0
 swarray_maci=1
 swarray_devtypei=2
 
+
 for devname in $devlist
 do
     echo "--------------------------------------------------------------"
@@ -97,8 +104,9 @@ do
     mkdir -p $env_cfg_path/$devname/nos/
     mkdir -p $dcnoscfg_path/img/$dcnos_version/img/
     env_devdocker=${taks_name}${docker_id}${env_name}${devname}
-    docker run -d --name $env_devdocker -P -v $env_cfg_path/$devname/nos/:/home/nos/ -v $dcnoscfg_path/img/$dcnos_version/img/:/home/nos/img/ --privileged $env_registry_address/dcnos_env:latest
+    docker run -d --name $env_devdocker -p $idevconsole_port:23 -p 0.0.0.0::22 -v $env_cfg_path/$devname/nos/:/home/nos/ -v $dcnoscfg_path/img/$dcnos_version/img/:/home/nos/img/ --privileged $env_registry_address/dcnos_env:latest
     docker exec $env_devdocker /etc/init.d/xinetd start
+    ((idevconsole_port++))
     if [ ! -f "$env_cfg_path/$devname/nos/start.sh" ]; then
         docker exec $env_devdocker cp /home/start.sh /home/nos/start.sh
         docker exec $env_devdocker cp /home/stop.sh /home/nos/stop.sh
@@ -130,7 +138,7 @@ do
     echo "--------------------------------------------------------------"
     echo "start tester docker" $xf
     env_xfdocker=$taks_name$docker_id$env_name$xf
-    docker run -t -i -P -d --name $env_xfdocker $env_registry_address/xfdsend:latest /bin/bash
+    docker run -t -i -p $ixfrpc_port:11918 -d --name $env_xfdocker $env_registry_address/xfdsend:latest /bin/bash
     #xfarray[$xf]=""
     for i in $(seq $xfarray_num)
     do
@@ -176,7 +184,7 @@ do
         testerflag=1
         ((testerincr++))
         continue
-    elif [[ $word =~ "port"[0-9] ]]; then
+    elif [[ $word =~ "port"[0-9]+ ]]; then
         mod="port"
         seq=`echo $word | awk 'BEGIN {FS="[^0-9]+"} {print $2}'`
         continue
