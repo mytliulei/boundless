@@ -1,6 +1,6 @@
 FROM debian:wheezy
 
-MAINTAINER mytliulei@gmail.com
+MAINTAINER Liu Lei <mytliulei@gmail.com>
 
 ENV DEBIAN_FRONTEND noninteractive
 
