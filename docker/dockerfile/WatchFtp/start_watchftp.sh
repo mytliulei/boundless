@@ -29,8 +29,16 @@ fi
 #check ftpd container exists
 if [ "$ftpd_id" == "" ]; then
     #start pureftpd container
-    docker run -d -p 21:21 --volumes-from ftpd_data --name pureftpd dcn_autotest/pure-ftpd
+    docker run -d -p 21:21 -p 20:20 -p 30000:30000 -p 30001:30001 -p 30002:30002 -p 30003:30003 -p 30004:30004 -p 30005:30005 -p 30006:30006 -p 30007:30007 -p 30008:30008 -p 30009:30009 --volumes-from ftpd_data --name pureftpd --privileged dcn_autotest/pure-ftpd
 else
     docker start pureftpd
 fi
+
+#config ftpd server time
+dateF=`date +%F`
+dateT=`date +%T`
+docker exec pureftpd date -s $dateF
+docker exec pureftpd date -s $dateT
+docker exec pureftpd hwclock -w
+
 
