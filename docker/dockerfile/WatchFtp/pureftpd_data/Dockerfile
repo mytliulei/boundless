@@ -25,4 +25,4 @@ RUN mkdir -p /home/ftpusers/ftp/img
 VOLUME ["/home/ftpusers/ftp","/tmp"]
 COPY monitorfs.py /home/ftpusers/monitorfs.py
 WORKDIR /home/ftpusers
-CMD ["python","monitorfs.py"]
+ENTRYPOINT ["python","monitorfs.py"]
