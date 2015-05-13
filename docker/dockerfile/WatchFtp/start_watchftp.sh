@@ -34,11 +34,4 @@ else
     docker start pureftpd
 fi
 
-#config ftpd server time
-dateF=`date +%F`
-dateT=`date +%T`
-docker exec pureftpd date -s $dateF
-docker exec pureftpd date -s $dateT
-docker exec pureftpd hwclock -w
-
 
