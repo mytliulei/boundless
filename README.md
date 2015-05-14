@@ -7,7 +7,7 @@
 ## 1. 网络虚拟化
   1. linux网络虚拟设备
     1. [iproute2](./网络虚拟化/linux虚拟设备/iproute2.md)
-    2. [network namespace](./网络虚拟化/linux虚拟设备/namespace.md)
+    2. [network namespace](./网络虚拟化/linux虚拟设备/namespaces.md)
     3. [veth](./网络虚拟化/linux虚拟设备/veth.md)
     4. [bridge](./网络虚拟化/linux虚拟设备/bridge.md)
     5. [tap](./网络虚拟化/linux虚拟设备/tap.md)
