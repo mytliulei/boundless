@@ -11,12 +11,16 @@
 
 与传统的在单网卡上配置多个ip不同，macvlan设备有自己的mac地址，这样可以在一个网卡上虚拟多个mac-ip对。
     
+:warning: **macvlan默认模式是verpa，另外还bridge，private，默认情况下，建立在同一网卡下的macvlan虚拟设备之间不能互相通信**
     
 #### net namespace
 
 将创建的macvlan设备划到单独的netnamespace，这样我们就可以不影响宿主机器的net环境。
     
 ### 测试仪拓扑及验证方法
+
+
+
 
 这是我们的测试仪拓扑，eth1为测试仪端口（实体环境下，为实际的物理网卡；虚拟环境下为veth），我们在eth1下建立macvlan设备eth1.mv1，并划到namespace test1下，配置地址10.1.1.10
 
@@ -28,7 +32,7 @@ ip netns exec test1 ip link set eth1.mv1 up
 ip netns exec test1 ip addr add 10.1.1.10/24 dev eth1.mv1
 ```
 
-### 验证静态地址 
+#### 验证静态地址 
 
   我们在虚拟环境下，验证该方法是否可以模拟host
     
@@ -56,7 +60,7 @@ ip netns exec n2 ip addr add 10.1.1.11/24 dev veth1.mv2
 ```
     4. veth1 ping mv1 mv2
 ```shell
-root@ip netns exec test ping 10.1.1.10 -c 5
+root#ip netns exec test ping 10.1.1.10 -c 5
 PING 10.1.1.10 (10.1.1.10) 56(84) bytes of data.
 64 bytes from 10.1.1.10: icmp_seq=1 ttl=64 time=0.069 ms
 64 bytes from 10.1.1.10: icmp_seq=2 ttl=64 time=0.072 ms
@@ -68,7 +72,7 @@ PING 10.1.1.10 (10.1.1.10) 56(84) bytes of data.
 5 packets transmitted, 5 received, 0% packet loss, time 3999ms
 rtt min/avg/max/mdev = 0.056/0.067/0.073/0.012 ms
 
-root@ip netns exec test ping 10.1.1.11 -c 5
+root#ip netns exec test ping 10.1.1.11 -c 5
 PING 10.1.1.11 (10.1.1.11) 56(84) bytes of data.
 64 bytes from 10.1.1.11: icmp_seq=1 ttl=64 time=0.069 ms
 64 bytes from 10.1.1.11: icmp_seq=2 ttl=64 time=0.072 ms
@@ -93,3 +97,58 @@ ip netns exec test  ip neigh show
   
   接下里，我们来验证 macvlan 作为dhcp client 。。。
     
+#### 验证dhcp client
+  
+  我们先在物理网卡上验证
+  
+    1. 在eth1上建立macvlan设备,获取地址
+```shell
+root# ip netns add dn1
+root# ip link add eth1.mv1 link eth1 type macvlan
+root# ip link set eth1.mv1 netns dn1
+root# ip netns exec dn1 ip link set eth1.mv1 up
+root# ip netns exec dn1 ip link show
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default 
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+1045: eth1.mv1@if3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN mode DEFAULT group default 
+    link/ether f6:24:4d:4e:57:f2 brd ff:ff:ff:ff:ff:ff
+
+root# ip netns exec dn1 ip addr show
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default 
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+1045: eth1.mv1@if3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN group default 
+    link/ether f6:24:4d:4e:57:f2 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::f424:4dff:fe4e:57f2/64 scope link 
+       valid_lft forever preferred_lft forever
+root# ip netns exec dn1 dhclient -4 eth1.mv1 
+
+root# ip netns exec dn1 ip addr show
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default 
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+1045: eth1.mv1@if3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN group default 
+    link/ether f6:24:4d:4e:57:f2 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.30.115/23 brd 192.168.31.255 scope global eth1.mv1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::f424:4dff:fe4e:57f2/64 scope link 
+       valid_lft forever preferred_lft forever
+```
+
+    2. ping 网关 192.168.30.254
+```shell
+root# ip netns exec dn1 ping 192.168.30.254 -c 5
+PING 192.168.30.254 (192.168.30.254) 56(84) bytes of data.
+64 bytes from 192.168.30.254: icmp_seq=1 ttl=64 time=1.11 ms
+64 bytes from 192.168.30.254: icmp_seq=2 ttl=64 time=0.937 ms
+64 bytes from 192.168.30.254: icmp_seq=3 ttl=64 time=0.922 ms
+64 bytes from 192.168.30.254: icmp_seq=4 ttl=64 time=1.06 ms
+64 bytes from 192.168.30.254: icmp_seq=5 ttl=64 time=2.17 ms
+
+--- 192.168.30.254 ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 4004ms
+rtt min/avg/max/mdev = 0.922/1.242/2.173/0.471 ms
+
+root# ip netns exec dn1 ip neigh show
+192.168.30.50 dev eth1.mv1 lladdr 78:44:76:83:7f:6b STALE
+192.168.30.254 dev eth1.mv1 lladdr 00:03:0f:aa:bb:cc REACHABLE
+```
+  
