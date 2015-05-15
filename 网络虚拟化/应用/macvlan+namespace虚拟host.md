@@ -11,7 +11,7 @@
 
 与传统的在单网卡上配置多个ip不同，macvlan设备有自己的mac地址，这样可以在一个网卡上虚拟多个mac-ip对。
     
-:warning: **macvlan默认模式是verpa，另外还bridge，private，默认情况下，建立在同一网卡下的macvlan虚拟设备之间不能互相通信**
+:warning: **macvlan默认模式是verpa（另外还bridge，private，passthru），默认情况下，建立在同一网卡下的macvlan虚拟设备之间不能互相通信**
     
 #### net namespace
 
