@@ -4,8 +4,14 @@
     
 由于成本的原因，我们自己开发了测试仪软件，具备发包，抓包，统计等，但没有模拟net协议的功能。
     
-这里，利用linux的macvlan和net namespace，尝试模拟host
+这里，利用linux的macvlan和net namespace，尝试模拟host，需要实现的功能
 
++ 可以配置静态ipv4和ipv6地址
++ 可以dhcp获取ipv4和ipv6地址
++ 可以配置mac地址
++ 可以配置网关
++ 支持ping
++ 支持vlan tag
 
 #### macvlan
 
