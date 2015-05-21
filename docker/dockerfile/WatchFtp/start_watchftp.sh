@@ -9,6 +9,7 @@ t_ip=`echo $t_ipmask | cut -d "/" -f1`
 redis_id=`docker ps -aq -f name="redis-server"`
 ftpd_v_id=`docker ps -aq -f name="ftpd_data"`
 ftpd_id=`docker ps -aq -f name="pureftpd"`
+cron_ftp_id=`docker ps -aq -f name="cron_clear_ftp"`
 
 #check redis container exists
 if [ "$redis_id" == "" ]; then
@@ -34,4 +35,10 @@ else
     docker start pureftpd
 fi
 
-
+#check cron_clear_ftp container exists
+if [ "$cron_ftp_id" == "" ]; then
+    #start cron_clear_ftp container
+    docker run -d --volumes-from ftpd_data --name cron_clear_ftp 192.168.30.144:8080/crondelfile
+else
+    docker start cron_clear_ftp
+fi
