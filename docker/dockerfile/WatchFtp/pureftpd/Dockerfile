@@ -41,8 +41,8 @@ RUN groupadd ftpgroup
 RUN useradd -g ftpgroup -d /dev/null -s /etc ftpuser
 
 # startup
-EXPOSE 20 21 30000 30001 30002 30003 30004 30005 30006 30007 30008 30009
-ENTRYPOINT ["pure-ftpd", "-c", "100","-C", "10","-p","30000:30009", "-l", "puredb:/etc/pure-ftpd/pureftpd.pdb", "-x", "-E", "-j", "-R"]
+EXPOSE 20 21
+ENTRYPOINT ["pure-ftpd", "-c", "100","-C", "10", "-l", "puredb:/etc/pure-ftpd/pureftpd.pdb", "-x", "-E", "-j", "-R"]
 # add user ftp
 COPY pureftpd.passwd /etc/pure-ftpd/pureftpd.passwd
 RUN pure-pw mkdb
