@@ -144,6 +144,7 @@ do
     else
         docker run -t -i -p $ixfdcontrol_port:11918 -d --name $env_xfdocker $env_registry_address/xfdsend:latest /bin/bash
         ((ixfdcontrol_port++))
+    fi
     #xfarray[$xf]=""
     for i in $(seq $xfarray_num)
     do
@@ -256,7 +257,7 @@ do
     xfiface=${xfarray[$ixfnum]}
     ((ixfnum++))
     ((ixfnx--))
-    echo "start XiaoFish -d -m 1 -i ${xfiface:0:end-1}"
+    echo "start XiaoFish -d -m 2 -i ${xfiface:0:end-1}"
     docker exec $env_xfdocker python /home/XiaoFish.py -d -m 2 -i ${xfiface:0:end-1}
     for i in $(seq $ixfnx)
     do
