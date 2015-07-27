@@ -69,5 +69,18 @@ pktgen：pktgen是linux内核自带的发包工具，[中文文档](https://gith
 
 * 各个属性的配置可以参见[中文文档的说明](https://github.com/torvalds/linux/blob/master/Documentation/networking/pktgen.txt)
 * 使用中发现2.72的版本，没有rate，ratep的属性，只能用delay来代替
-* *当count设置为0时，不能用echo stop > /proc/net/pktgen/pgctrl来停止，只能用kill的方式停止，不知为何*
+* *当count设置为0时，不能用echo stop > /proc/net/pktgen/pgctrl来停止，只能用kill的方式停止，不知为何:question:*
 * 附录：[pktgen the linux packet generator](./doc_quote/pktgen_the_linux_packet_generator.pdf)
+
+# tcpdump抓包的说明：
+
+* 抓包的实现： 按照抓包动作的时间，在/tmp/下生产一个pcap文件，用tcpdump将抓到的报文暂存在sta上，命令为：
+```shell
+tcpdump -n -i iface -w /tmp/filename.pcap 
+```
+* 过滤报文： 用tcpdump读取第一步抓包的文件，通过过滤条件，获取报文的数量及内容,命令为：
+```
+tcpdump -n -r /tmp/filename.pcap express | wc -l
+tcpdump -n -r /tmp/filename.pcap -XX filter_express
+```
+* 新内核的tcpdump版本支持区分tx/rx的报文，参数为-P in|out|inout，实现上做了自适应，通过tcpdump -h来区分
