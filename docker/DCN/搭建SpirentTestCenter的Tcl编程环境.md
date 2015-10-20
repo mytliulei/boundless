@@ -53,9 +53,10 @@ docker pull ioft/i386-ubuntu:14.04.2
   
   需要说明的是：
   
-  1. 文件最后用的是ENTRYPOINT命令，目的就是不允许容器替换linux32命令，否则容器启动后会变为x64环境
-  2. 替换了默认的apt source，改为163的源，这样更快
-  3. RUN 后面的命令都要带linux32
+  1. 将上述tcl解释器及SpirentTestCenter的安装程序下载到Dockerfile同目录下
+  2. 文件最后用的是ENTRYPOINT命令，目的就是不允许容器替换linux32命令，否则容器启动后会变为x64环境
+  3. 替换了默认的apt source，改为163的源，这样更快
+  4. RUN 后面的命令都要带linux32
   
 
 ### 附录: 一些资源
