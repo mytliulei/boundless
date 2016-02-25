@@ -1,4 +1,20 @@
-# 引用的资源
+# 背景
+
+最近在搞robotframework的测试框架，对于RIDE实现的监听器比较感兴趣，就大概看了一些源码。
+
+- RIDE先在localhost启动一个服务器a
+- 当robot运行并加载监听器时，会建立到服务器的socket连接，而且监听器本身也会启动一个服务器b
+- robot运行到相关的监控点时，监听器获取脚本运行信息，并通过这个socket连接向RIDE的服务器a发送，由此RIDE来记录相关的脚本实时运行状态
+- 当通过RIDE界面来操作`pause`,`continue`,`stop`等动作时，RIDE服务器a会建立到监听器服务器b的连接，并发送动作，监听器通过event来控制脚本`pause`,`continue`,`stop`等
+
+上述过程涉及到了socket.recv, 就顺便学习了一些recv的一些特点
+
+- socket 默认是blocking的
+- recv会等待数据到来
+- 如果available的数据少于buffsize，仍然会返回
+
+
+# 网上资源
 
 ## 问题
 
@@ -88,13 +104,3 @@ aaaaaaaaaa EOF
 
 ### **[Socket Programming HOWTO](https://docs.python.org/2/howto/sockets.html)**
 
-# 背景
-
-最近在搞robotframework的测试框架，对于RIDE实现的监听器比较感兴趣，就大概看了一些源码。
-
-- RIDE先在localhost启动一个服务器a
-- 当robot运行并加载监听器时，会建立到服务器的socket连接，而且监听器本身也会启动一个服务器b
-- robot运行到相关的监控点时，监听器获取脚本运行信息，并通过这个socket连接向RIDE的服务器a发送，由此RIDE来记录相关的脚本实时运行状态
-- 当通过RIDE界面来操作`pause`,`continue`,`stop`等动作时，RIDE服务器a会建立到监听器服务器b的连接，并发送动作，监听器通过event来控制脚本`pause`,`continue`,`stop`等
-
-上述过程涉及到了socket.recv, 就顺便学习了一些recv的一些特点
