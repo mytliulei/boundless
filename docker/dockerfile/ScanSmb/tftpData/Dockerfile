@@ -13,7 +13,7 @@ RUN pip install pyinotify \
 
 # setup ftpgroup and ftpuser
 RUN groupadd ftpgroup
-RUN useradd -g ftpgroup -d /home/ftpusers -s /user/sbin/nologin ftpuser
+RUN useradd -g ftpgroup -d /home/ftpusers -s /bin/bash ftpuser
 
 # mkdir for ftp
 RUN mkdir -p /home/ftpusers
@@ -21,6 +21,6 @@ RUN mkdir -p /home/ftpusers
 RUN chown ftpuser:ftpgroup /home/ftpusers
 USER ftpuser
 RUN mkdir -p /home/ftpusers/tftp
-VOLUME [/home/ftpusers/tftp","/tmp"]
+VOLUME ["/home/ftpusers/tftp","/tmp"]
 WORKDIR /home/ftpusers
 CMD ["echo","this is tftp data volume container"]

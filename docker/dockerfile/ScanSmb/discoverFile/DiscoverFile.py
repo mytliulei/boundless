@@ -24,6 +24,7 @@ import shutil
 import socket
 from argparse import ArgumentParser
 import time
+import logging,logging.handlers
 
 from nmb.NetBIOS import NetBIOS
 from smb.SMBConnection import SMBConnection
@@ -41,6 +42,7 @@ class ScanSmbPath(object):
         self.file_re = re.compile(file_pattern)
         self.new_file = {}
         self.new_ctime = {}
+        self.logger = logging.getLogger("scansmb")
         # self.write_uid = pwd.getpwnam("ftpuser").pw_uid
         # self.write_gid = pwd.getpwnam("ftpuser").pw_gid
 
@@ -49,7 +51,13 @@ class ScanSmbPath(object):
         """
         rel_path = "/"+path
         dirs , files, c_times = [], [], []
-        names = self.smb_con.listPath(server_name,rel_path)
+        try:
+            names = self.smb_con.listPath(server_name,rel_path)
+        except Exception,ex:
+            sys.stdout.write('[%s] listPath  error %s' % (time.ctime(),ex))
+            sys.stdout.write('\n')
+            self.logger.critical("listPath  error %s" % ex)
+            sys.exit(1)
         for name in names:
             if name.isDirectory:
                 if name.filename not in [u'.', u'..']:
@@ -112,16 +120,26 @@ class ScanSmbPath(object):
             if os.path.exists(to_file):
                 sys.stdout.write('file %s exists, not download to overwrite' % filename)
                 sys.stdout.write('\n')
+                self.logger.info("file %s exists, not download to overwrite" % filename)
                 return 0
             ipath = new_file_path.strip("/")
             ipath_list = ipath.split("/",1)
             iserver_name = ipath_list[0]
             iserver_path = "/"+ipath_list[1]
-            with open(to_file,"wb") as fobj:
-                sys.stdout.write('[%s] download file %s ...' % (time.ctime(),filename))
-                sys.stdout.write('\n')
-                self.smb_con.retrieveFile(iserver_name,iserver_path,fobj,timeout=180)
-                # os.chown(to_file, self.write_uid, self.write_gid)
+            try:
+                with open(to_file,"wb") as fobj:
+                    sys.stdout.write('[%s] download file %s ...' % (time.ctime(),filename))
+                    sys.stdout.write('\n')
+                    self.logger.info("download file %s ..." % filename)
+                    self.smb_con.retrieveFile(iserver_name,iserver_path,fobj,timeout=180)
+                    # os.chown(to_file, self.write_uid, self.write_gid)
+            except Exception,ex:
+                if os.path.exists(to_file):
+                    sys.stdout.write('[%s] download file error : %s, remove it ...' % (time.ctime(),ex))
+                    sys.stdout.write('\n')
+                    self.logger.error("download file error : %s, remove it ..." % ex)
+                    os.remove(to_file)
+                return 2
         else:
             return 1
         return 0
@@ -134,7 +152,9 @@ def get_sub_path(redis_con,scankey):
     redispipe.smembers(scankey)
     ret = redispipe.execute()
     if not ret[0]:
+        logger = logging.getLogger("scansmb")
         sys.stdout.write('key %s has no member' % scankey)
+        logger.error("key %s has no member" % scankey)
         return None
     for pkey in ret[0]:
         redispipe.smembers(pkey)
@@ -152,7 +172,9 @@ def update_key(redis_con,scankey):
     redispipe.smembers(scankey)
     ret = redispipe.execute()
     if not ret[0]:
+        logger = logging.getLogger("scansmb")
         sys.stdout.write('key %s has no member' % scankey)
+        logger.error("key %s has no member" % scankey)
         return None
     # update smb server in scankey
     smbkey_list = list(ret[0])
@@ -192,6 +214,10 @@ def pulish_update_msg(redis_con,pub_key,smb_name,path,tftp_server_ip,filename):
     ret = redispipe.execute()
     print('[%s] publish message on channel:' % time.ctime())
     print(broadcast_str, broadcast_key)
+    logger = logging.getLogger("scansmb")
+    logger.info("publish message on channel:")
+    logger.info(broadcast_str)
+    logger.info(broadcast_key)
     # sys.stdout.write('publish message %s on channel %s' % (broadcast_str, broadcast_key))
     # sys.stdout.write('\n')
 
@@ -207,6 +233,12 @@ def main():
     p.add_argument('--tftppath', '-t', default="/home/ftpusers/tftp", help='tftp server root path')
     p.add_argument('--tftpip', '-a', default="10.18.142.48", help='tftp server ip address')
     args = p.parse_args()
+    logger = logging.getLogger()
+    log_Handle = logging.handlers.RotatingFileHandler("/home/ftpusers/scansmb.log",maxBytes=1024*1024,backupCount=5)
+    log_format=logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger.setLevel(logging.INFO)
+    log_Handle.setFormatter(log_format)
+    logger.addHandler(log_Handle)
     try:
         RedisPool = redis.ConnectionPool(host=args.redisip,port=args.redisport,db=0)
         redis_con = redis.Redis(connection_pool=RedisPool)
@@ -222,6 +254,7 @@ def main():
         return 201
     # smb_path = {"192.168.2.30@dp:dpdp":[u"/产品版本/BSW/BSWV100R003/神州二号"],}
     print("[%s] scanning smb server path %s" % (time.ctime(),smb_path))
+    logger.info("scanning smb server path %s" % smb_path)
     client_name = socket.gethostname()
     for ismb in smb_path.keys():
         ismb_ip = ismb.split("@")[0]

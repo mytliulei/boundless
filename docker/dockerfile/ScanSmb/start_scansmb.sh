@@ -23,13 +23,13 @@ fi
 #check tftpd_data volumes container exists
 if [ "$tftpd_v_id" == "" ]; then
     #start ftpd volumes and monitor fs container
-    docker run -d -ti --name tftpd_data mytliulei/tftp_data
+    docker run -d -ti --name tftpd_data mytliulei/tftp_data:latest
 fi
 
 #check tftpd container exists
 if [ "$tftpd_id" == "" ]; then
     #start pureftpd container
-    docker run -d -p 69:69/udp --volumes-from tftpd_data --name tftpd --privileged mytliulei/tftp_server
+    docker run -d -p 69:69/udp --volumes-from tftpd_data --name tftpd --privileged mytliulei/tftp_server:latest
 else
     docker start tftpd
 fi
@@ -37,7 +37,7 @@ fi
 #check scan smb path container exists
 if [ "$disfile_id" == "" ]; then
     #start pureftpd container
-    docker run -d --volumes-from tftpd_data --name discover_file mytliulei/discover_file
+    docker run -d --volumes-from tftpd_data --name discover_file mytliulei/discover_file:latest
 else
     docker start discover_file
 fi
@@ -45,7 +45,7 @@ fi
 #check cron_clear_ftp container exists
 if [ "$cron_tftp_id" == "" ]; then
     #start cron_clear_ftp container
-    docker run -d --volumes-from tftpd_data --name cron_clear_tftp mytliulei/clear_tftp
+    docker run -d --volumes-from tftpd_data --name cron_clear_tftp mytliulei/clear_tftp:latest
 else
     docker start cron_clear_tftp
 fi
