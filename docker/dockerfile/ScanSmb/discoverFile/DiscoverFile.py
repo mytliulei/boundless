@@ -42,6 +42,7 @@ class ScanSmbPath(object):
         self.file_re = re.compile(file_pattern)
         self.new_file = {}
         self.new_ctime = {}
+        self.new_fsize = {}
         self.logger = logging.getLogger("scansmb")
         # self.write_uid = pwd.getpwnam("ftpuser").pw_uid
         # self.write_gid = pwd.getpwnam("ftpuser").pw_gid
@@ -50,7 +51,7 @@ class ScanSmbPath(object):
         """
         """
         rel_path = "/"+path
-        dirs , files, c_times = [], [], []
+        dirs , files, c_times,f_sizes = [], [], [], []
         try:
             names = self.smb_con.listPath(server_name,rel_path)
         except Exception,ex:
@@ -66,8 +67,9 @@ class ScanSmbPath(object):
                 if self.file_re.search(name.filename):
                     files.append(name.filename)
                     c_times.append(name.create_time)
+                    f_sizes.append(name.file_size)
         ret_path = os.path.join(u"/"+server_name,path)
-        yield ret_path,files,c_times
+        yield ret_path,files,c_times,f_sizes
         for name in dirs:
             new_path = os.path.join(path, name)
             for x in self.walk_path(server_name, new_path):
@@ -83,10 +85,10 @@ class ScanSmbPath(object):
             ipath_list = ipath.split("/",1)
             iserver_name = ipath_list[0]
             iserver_path = ipath_list[1]
-            for (w_path,w_files,w_ctimes) in self.walk_path(iserver_name,iserver_path):
-                self.set_new_file(xpath,w_path,w_files,w_ctimes)
+            for (w_path,w_files,w_ctimes,w_fsizes) in self.walk_path(iserver_name,iserver_path):
+                self.set_new_file(xpath,w_path,w_files,w_ctimes,w_fsizes)
 
-    def set_new_file(self,path,r_path,files,ctimes):
+    def set_new_file(self,path,r_path,files,ctimes,fsizes):
         """
         """
         if path not in self.new_ctime.keys():
@@ -94,22 +96,25 @@ class ScanSmbPath(object):
         else:
             base_ctime = self.new_ctime[path]
         base_file = None
-        for (ifile,ictime) in zip(files,ctimes):
+        base_fsize = None
+        for (ifile,ictime,fsize) in zip(files,ctimes,fsizes):
             if ictime > base_ctime:
                 base_ctime = ictime
                 base_file = ifile
+                base_fsize = fsize
         if base_file:
             self.new_file[path] = os.path.join(r_path,base_file)
             self.new_ctime[path] = base_ctime
+            self.new_fsize[path] = base_fsize
 
     def get_new_file(self,path):
         """
         """
         if path not in self.new_file.keys():
             return None
-        return self.new_file[path]
+        return (self.new_file[path],self.new_fsize[path])
 
-    def retrieve_file(self,src_path,to_path):
+    def retrieve_file(self,src_path,to_path,n_fsize):
         """
         """
         if src_path in self.new_file.keys():
@@ -118,10 +123,14 @@ class ScanSmbPath(object):
             r_to_path = os.path.realpath(to_path)
             to_file = os.path.join(r_to_path,filename)
             if os.path.exists(to_file):
-                sys.stdout.write('file %s exists, not download to overwrite' % filename)
-                sys.stdout.write('\n')
-                self.logger.info("file %s exists, not download to overwrite" % filename)
-                return 0
+                tftp_fsize = os.path.getsize(to_file)
+                if n_fsize == tftp_fsize:
+                    sys.stdout.write('file %s exists, not download to overwrite' % filename)
+                    sys.stdout.write('\n')
+                    self.logger.info("file %s exists, not download to overwrite" % filename)
+                    return 0
+                else:
+                    pass
             ipath = new_file_path.strip("/")
             ipath_list = ipath.split("/",1)
             iserver_name = ipath_list[0]
@@ -135,10 +144,9 @@ class ScanSmbPath(object):
                     # os.chown(to_file, self.write_uid, self.write_gid)
             except Exception,ex:
                 if os.path.exists(to_file):
-                    sys.stdout.write('[%s] download file error : %s, remove it ...' % (time.ctime(),ex))
-                    sys.stdout.write('\n')
-                    self.logger.error("download file error : %s, remove it ..." % ex)
                     os.remove(to_file)
+                    self.logger.error("download file error,remove it ...")
+                    self.logger.error(ex)
                 return 2
         else:
             return 1
@@ -175,7 +183,7 @@ def update_key(redis_con,scankey):
         logger = logging.getLogger("scansmb")
         sys.stdout.write('key %s has no member' % scankey)
         logger.error("key %s has no member" % scankey)
-        return None
+        return -1
     # update smb server in scankey
     smbkey_list = list(ret[0])
     for ikey in smbkey_list:
@@ -247,7 +255,9 @@ def main():
         sys.stdout.write('\n')
         return 101
     # del expire keys from redis server
-    update_key(redis_con,args.scankey)
+    update_code = update_key(redis_con,args.scankey)
+    if update_code < 0:
+        return 201
     # get scan path from redis server
     smb_path = get_sub_path(redis_con,args.scankey)
     if smb_path is None:
@@ -267,9 +277,9 @@ def main():
         scansmb = ScanSmbPath(smb_con,smb_path[ismb],args.filepattren)
         scansmb.find_file()
         for ipath in smb_path[ismb]:
-            n_file = scansmb.get_new_file(ipath)
+            (n_file,n_fsize) = scansmb.get_new_file(ipath)
             filename = os.path.split(n_file)[1]
-            ret = scansmb.retrieve_file(ipath,args.tftppath)
+            ret = scansmb.retrieve_file(ipath,args.tftppath,n_fsize)
             if ret == 0:
                 pulish_update_msg(redis_con,args.pubkey,ismb,ipath,args.tftpip,filename)
         smb_con.close()
