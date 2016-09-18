@@ -22,6 +22,8 @@
 ## 2. python
   1. [scapy](./python/scapy)
     1. [使用方法概要](./python/scapy/documentation.md)
+  2. [打包工具](./python/打包exe)
+    1. [pyinstaller](./python/打包exe/pyinstaller.md)
   
 ## 3. docker
   1. [DCN](./docker/DCN)
