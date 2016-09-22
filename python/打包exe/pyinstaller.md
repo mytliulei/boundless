@@ -43,11 +43,11 @@ else :
 * data file被放置在用户工作目录里
 * data file被打包到程序里
 
-我们介绍一下前两种情况
+一般，我们可以通过下面2种方法来解决
 
-### 第一种情况：```__file__```与```sys._MEIPASS```
+### ```__file__```与```sys._MEIPASS```
 
-一般，我们都是通过```__file__```来定位程序所在的目录，但打包后，就不行了
+一般，我们都是通过```__file__```来定位执行的文件所在的目录，但打包后，就不行了
 
 pyinstaller提供了```sys._MEIPASS```来解决，官方说明如下:
 >When a bundled app starts up, the bootloader sets the sys.frozen attribute and stores the absolute path to the bundle folder in sys._MEIPASS. For a one-folder bundle, this is the path to that folder, wherever the user may have put it. For a one-file bundle, this is the path to the _MEIxxxxxx temporary folder created by the bootloader 
@@ -55,15 +55,81 @@ pyinstaller提供了```sys._MEIPASS```来解决，官方说明如下:
 大概的代码就是
 ```python
 import sys, os.path
-if getattr( sys, 'frozen', False ) :
-        # running in a bundle
-        fpath = sys._MEIPASS
-else :
-        # running live
-        fpath = os.path.dirname(__file__)
+if getattr(sys, 'frozen', False):
+        # we are running in a bundle
+        bundle_dir = sys._MEIPASS
+else:
+        # we are running in a normal Python environment
+        bundle_dir = os.path.dirname(os.path.abspath(__file__))
 ```
 
+### ```sys.executable```与```sys.argv[0]```
 
+```sys.executable```：
 
+* 源码情况下，指的是python解释器的路径
+* 打包情况下，指的是打包程序所在路径
 
+```sys.argv[0]```：
+
+* 程序名称或路径，相对或绝对路径（取决于所在系统）
+* 如果程序通过链接文件执行，则是链接文件的名称
+
+官方解释如下：
+>When a normal Python script runs, sys.executable is the path to the program that was executed, namely, the Python interpreter. In a frozen app, sys.executable is also the path to the program that was executed, but that is not Python; it is the bootloader in either the one-file app or the executable in the one-folder app. This gives you a reliable way to locate the frozen executable the user actually launched.
+
+>The value of sys.argv[0] is the name or relative path that was used in the user’s command. It may be a relative path or an absolute path depending on the platform and how the app was launched.
+
+>If the user launches the app by way of a symbolic link, sys.argv[0] uses that symbolic name, while sys.executable is the actual path to the executable. Sometimes the same app is linked under different names and is expected to behave differently depending on the name that is used to launch it. For this case, you would test os.path.basename(sys.argv[0])
+
+>On the other hand, sometimes the user is told to store the executable in the same folder as the files it will operate on, for example a music player that should be stored in the same folder as the audio files it will play. For this case, you would use os.path.dirname(sys.executable)
+
+下面这段程序：
+```python
+#!/usr/bin/python3
+import sys, os
+frozen = 'not'
+if getattr(sys, 'frozen', False):
+        # we are running in a bundle
+        frozen = 'ever so'
+        bundle_dir = sys._MEIPASS
+else:
+        # we are running in a normal Python environment
+        bundle_dir = os.path.dirname(os.path.abspath(__file__))
+print( 'we are',frozen,'frozen')
+print( 'bundle dir is', bundle_dir )
+print( 'sys.argv[0] is', sys.argv[0] )
+print( 'sys.executable is', sys.executable )
+print( 'os.getcwd is', os.getcwd() )
+```
+
+源码的执行结果：
+```
+(pyinstaller) E:\test\pyinstaller>python directories.py
+('we are', 'not', 'frozen')
+('bundle dir is', 'E:\\test\\pyinstaller')
+('sys.argv[0] is', 'directories.py')
+('sys.executable is', 'E:\\VirtualEnv\\pyinstaller\\Scripts\\python.exe')
+('os.getcwd is', 'E:\\test\\pyinstaller')
+```
+
+打包为目录的执行结果：
+```
+(pyinstaller) E:\test\pyinstaller>dist\directories\directories.exe
+('we are', 'ever so', 'frozen')
+('bundle dir is', 'E:\\test\\PYINST~1\\dist\\DIRECT~1')
+('sys.argv[0] is', 'dist\\directories\\directories.exe')
+('sys.executable is', 'E:\\test\\pyinstaller\\dist\\directories\\directories.exe
+')
+('os.getcwd is', 'E:\\test\\pyinstaller')
+```
+打包为单一文件的执行结果：
+```
+(pyinstaller) E:\test\pyinstaller>dist\directories.exe
+('we are', 'ever so', 'frozen')
+('bundle dir is', 'C:\\Users\\Lenovo\\AppData\\Local\\Temp\\_MEI77~1')
+('sys.argv[0] is', 'dist\\directories.exe')
+('sys.executable is', 'E:\\test\\pyinstaller\\dist\\directories.exe')
+('os.getcwd is', 'E:\\test\\pyinstaller')
+```
 
