@@ -10,7 +10,7 @@ CPU其实就是计算机内部的一个电子电路。根据一些具体的指�
 
 当今大多数地CPU都是微处理器，即它们被包含在单个集成电路芯片（integrated circuit chip）中。一个包含CPU的集成电路可能也包含内存，外围接口和其它的一些计算机组件。这样的集成设备叫做微控制器（microcontrollers）或者芯片上的系统（SoC）。一些计算机采用多核处理器，即单个芯片中包含2个或更多的CPU（也被叫做“cores”）; 在这种情况下，单个芯片有时也被称作”sockets”.
 
-![下图表示的是CPU与主存和IO之间的交互](./cpu_map.png)
+![下图表示的是CPU与主存和IO之间的交互](./quote/cpu_map.png)
 
 ## 架构
 
@@ -38,7 +38,7 @@ Hyper-threading 使操作系统认为处理器(processor)的数目是实际核�
 
 下图展示了一个Intel Core i7处理器的一个组织结构，这个微处理器芯片中有4个CPU核，每个核中都有它自己的L1和L2缓存。
 
-![多核示意图](./multi-cores.png)
+![多核示意图](./quote/multi-cores.png)
 
 ### 多处理器
 
@@ -61,7 +61,7 @@ NUMA体系结构中多了Node的概念，这个概念其实是用来解决core�
 
 另外每个node有自己的内部CPU，总线和内存，同时还可以访问其他node内的内存，NUMA的最大的优势就是可以方便的增加CPU的数量，因为Node内有自己内部总线，所以增加CPU数量可以通过增加Node的数目来实现，如果单纯的增加CPU的数量，会对总线造成很大的压力。
 
-![NUMA-NODE](./numa_node.png)
+![NUMA-NODE](./quote/numa_node.png)
 
 
 根据上面提到的，由于每个node内部有自己的CPU总线和内存，所以如果一个虚拟机的vCPU跨不同的Node的话，就会导致一个node中的CPU去访问另外一个node中的内存的情况，这就导致内存访问延迟的增加。在有些特殊场景下，比如NFV环境中，对性能有比较高的要求，就非常需要同一个虚拟机的vCPU尽量被分配到同一个Node中的CPU上
